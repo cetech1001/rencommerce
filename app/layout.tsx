@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header, Footer } from "@/lib/components";
 import { CartProvider } from "@/lib/contexts";
+import { config } from "@/lib/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EnergyHub - Rent or Buy Renewable Energy Equipment",
+  title: `${config.app.name} - Rent or Buy Renewable Energy Equipment`,
   description: "Rent or buy premium renewable energy equipment including solar panels, wind turbines, battery storage, and more. Start your sustainability journey with EnergyHub.",
 };
 

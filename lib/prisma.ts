@@ -1,16 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { config } from "./config";
 
-const adapter = new PrismaMariaDb(
-  {
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    connectionLimit: 5
-  },
-)
+const adapter = new PrismaMariaDb({
+  host: config.database.host,
+  port: config.database.port,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.name,
+  connectionLimit: 5,
+});
 
 const prismaClientSingleton = () => {
   return new PrismaClient({ adapter });
@@ -24,4 +23,4 @@ const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+if (!config.isProduction) globalThis.prismaGlobal = prisma;
