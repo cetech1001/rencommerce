@@ -16,7 +16,6 @@ export const Header = () => {
     { label: "Rent", href: "/rent" },
     { label: "Buy", href: "/purchase" },
     { label: "Products", href: "/products" },
-    { label: "Dashboard", href: "/admin" },
   ];
 
   return (
@@ -65,10 +64,10 @@ export const Header = () => {
             )}
           </Link>
           <Link
-            href="/rent"
+            href="/auth/login"
             className="px-6 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200"
           >
-            Get Started
+            Login
           </Link>
         </div>
 
@@ -108,11 +107,11 @@ export const Header = () => {
               Cart {cartCount > 0 && `(${cartCount})`}
             </Link>
             <Link
-              href="/rent"
+              href="/auth/login"
               className="block w-full px-6 py-2 rounded-lg bg-primary text-white font-medium text-center hover:bg-primary/90 transition-all duration-200"
               onClick={() => setIsOpen(false)}
             >
-              Get Started
+              Login
             </Link>
           </div>
         </div>
