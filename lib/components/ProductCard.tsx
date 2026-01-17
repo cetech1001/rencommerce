@@ -16,7 +16,7 @@ interface ProductCardProps {
   specs?: string[];
 }
 
-export default function ProductCard({
+export const ProductCard = ({
   id,
   name,
   description,
@@ -28,7 +28,7 @@ export default function ProductCard({
   originalPrice,
   badge,
   specs = [],
-}: ProductCardProps) {
+}: ProductCardProps) => {
   const isOnSale = originalPrice && originalPrice > price;
 
   return (

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { Menu, X, ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/lib/contexts/CartContext";
 
-export default function Header() {
+export const Header = () => {
   const { getTotalItems } = useCart();
   const cartCount = getTotalItems();
   const [isOpen, setIsOpen] = useState(false);

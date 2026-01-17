@@ -2,167 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { ChevronDown, Grid3x3, List } from "lucide-react";
-import ProductCard from "@/components/ProductCard";
+import { ProductCard } from "@/lib/components";
 import Image from "next/image";
-
-// Sample product data with categories
-const allProducts = [
-  {
-    id: "1",
-    name: "Solar Panel Kit Pro",
-    description: "High-efficiency monocrystalline solar panels",
-    image: "https://images.unsplash.com/photo-1509391366360-2e938e9dfc72?w=500&h=500&fit=crop",
-    rating: 4.8,
-    reviews: 128,
-    type: "rent" as const,
-    price: 299,
-    category: "Solar",
-    badge: "Popular",
-    specs: ["500W output", "20 year warranty"],
-  },
-  {
-    id: "2",
-    name: "Wind Turbine Mini",
-    description: "Compact vertical axis wind turbine",
-    image: "https://images.unsplash.com/photo-1512453575296-8cb90ca7f1b2?w=500&h=500&fit=crop",
-    rating: 4.6,
-    reviews: 94,
-    type: "buy" as const,
-    price: 1899,
-    originalPrice: 2199,
-    category: "Wind",
-    badge: "Sale",
-    specs: ["3kW capacity", "Easy installation"],
-  },
-  {
-    id: "3",
-    name: "Battery Storage System",
-    description: "LiFePO4 battery backup storage",
-    image: "https://images.unsplash.com/photo-1518779578514-8acda299d911?w=500&h=500&fit=crop",
-    rating: 4.9,
-    reviews: 156,
-    type: "rent" as const,
-    price: 199,
-    category: "Storage",
-    specs: ["10kWh capacity", "Smart monitoring"],
-  },
-  {
-    id: "4",
-    name: "Hybrid Inverter System",
-    description: "Grid-tie inverter with battery support",
-    image: "https://images.unsplash.com/photo-1581092334000-4130873c25bb?w=500&h=500&fit=crop",
-    rating: 4.7,
-    reviews: 112,
-    type: "buy" as const,
-    price: 2499,
-    originalPrice: 2999,
-    category: "Inverters",
-    badge: "Best Value",
-    specs: ["8kW continuous", "WiFi monitoring"],
-  },
-  {
-    id: "5",
-    name: "Solar Thermal Collector",
-    description: "Evacuated tube thermal collector for heating",
-    image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=500&h=500&fit=crop",
-    rating: 4.5,
-    reviews: 78,
-    type: "rent" as const,
-    price: 149,
-    category: "Solar",
-    specs: ["4m² collector area", "High absorption"],
-  },
-  {
-    id: "6",
-    name: "Portable Power Station",
-    description: "1000W portable solar power station",
-    image: "https://images.unsplash.com/photo-1593462335572-01b4a9c0a8dc?w=500&h=500&fit=crop",
-    rating: 4.6,
-    reviews: 234,
-    type: "buy" as const,
-    price: 699,
-    category: "Storage",
-    specs: ["1000W capacity", "Fast charging"],
-  },
-  {
-    id: "7",
-    name: "Microinverter Bundle",
-    description: "Advanced microinverter with monitoring",
-    image: "https://images.unsplash.com/photo-1559056199-641a0ac8b3f7?w=500&h=500&fit=crop",
-    rating: 4.8,
-    reviews: 145,
-    type: "rent" as const,
-    price: 249,
-    category: "Inverters",
-    badge: "New",
-    specs: ["600W per unit", "Smart grid ready"],
-  },
-  {
-    id: "8",
-    name: "Wind Turbine Vertical Axis",
-    description: "Whisper-quiet vertical axis wind turbine",
-    image: "https://images.unsplash.com/photo-1518600506016-c5f5c70c63e9?w=500&h=500&fit=crop",
-    rating: 4.4,
-    reviews: 89,
-    type: "buy" as const,
-    price: 3499,
-    originalPrice: 3999,
-    category: "Wind",
-    specs: ["5kW capacity", "Urban friendly"],
-  },
-  {
-    id: "9",
-    name: "Solar Charge Controller",
-    description: "MPPT solar charge controller",
-    image: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&h=500&fit=crop",
-    rating: 4.7,
-    reviews: 156,
-    type: "rent" as const,
-    price: 179,
-    category: "Controllers",
-    specs: ["60A capacity", "WiFi enabled"],
-  },
-  {
-    id: "10",
-    name: "Geothermal Heat Pump",
-    description: "Energy-efficient geothermal heating system",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop",
-    rating: 4.9,
-    reviews: 98,
-    type: "buy" as const,
-    price: 4999,
-    originalPrice: 5999,
-    category: "Heating",
-    badge: "Premium",
-    specs: ["5-ton capacity", "High efficiency"],
-  },
-  {
-    id: "11",
-    name: "Solar Monitoring System",
-    description: "Real-time energy monitoring dashboard",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=500&fit=crop",
-    rating: 4.6,
-    reviews: 167,
-    type: "rent" as const,
-    price: 89,
-    category: "Monitoring",
-    specs: ["WiFi connected", "Mobile app"],
-  },
-  {
-    id: "12",
-    name: "Complete Solar Kit",
-    description: "All-in-one solar installation package",
-    image: "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=500&h=500&fit=crop",
-    rating: 4.8,
-    reviews: 201,
-    type: "buy" as const,
-    price: 5999,
-    originalPrice: 7499,
-    category: "Solar",
-    badge: "Best Seller",
-    specs: ["10kW system", "Includes installation"],
-  },
-];
+import { allProducts } from "@/lib/data";
 
 const categories = [
   "All Categories",
@@ -194,7 +36,7 @@ export default function Products() {
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = allProducts.filter((product) => {
+    const filtered = allProducts.filter((product) => {
       const categoryMatch =
         selectedCategory === "All Categories" || product.category === selectedCategory;
       const typeMatch = selectedType === "all" || product.type === selectedType;

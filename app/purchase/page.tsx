@@ -1,7 +1,7 @@
 import { ArrowRight, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import ProductCard from "@/components/ProductCard";
-import { buyingGuide, purchaseBenefits, purchaseProducts } from "@/data/site";
+import { ProductCard } from "@/lib/components";
+import { buyingGuide, purchaseBenefits, purchaseProducts } from "@/lib/data";
 
 export default function PurchasePage() {
   return (

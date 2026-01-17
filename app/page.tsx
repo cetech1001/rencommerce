@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Check, Zap, Sun } from "lucide-react";
-import ProductCard from "@/components/ProductCard";
-import { featuredProducts, howItWorks, testimonials } from "@/data/site";
+import { ProductCard } from "@/lib/components";
+import { featuredProducts, howItWorks, testimonials } from "@/lib/data";
 
 export default function Home() {
   return (

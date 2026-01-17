@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/lib/contexts";
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, getTotalPrice, getRentItems, getBuyItems, clearCart } =
