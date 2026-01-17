@@ -1,38 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { loginAction } from "@/lib/actions/auth.actions";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full py-3 px-4 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {pending ? "Signing in..." : "Sign in"}
+    </button>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [state, formAction] = useFormState(loginAction, null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    // Simulate login - replace with actual authentication
-    try {
-      // Add your authentication logic here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // For demo purposes, accept any email/password
-      console.log("Login attempt:", { email, password });
-
-      // Redirect to home or dashboard after successful login
+  // Redirect on successful login
+  useEffect(() => {
+    if (state?.success) {
       router.push("/");
-    } catch (err) {
-      setError("Invalid email or password");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [state?.success, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -64,14 +62,14 @@ export default function LoginPage() {
           </div>
 
           {/* Error Message */}
-          {error && (
+          {state && !state.success && (
             <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600">{state.message}</p>
             </div>
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form action={formAction} className="space-y-6">
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
@@ -79,13 +77,15 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                 placeholder="you@example.com"
               />
+              {state?.errors?.email && (
+                <p className="text-sm text-red-600 mt-1">{state.errors.email[0]}</p>
+              )}
             </div>
 
             {/* Password Field */}
@@ -103,23 +103,19 @@ export default function LoginPage() {
               </div>
               <input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                 placeholder="Enter your password"
               />
+              {state?.errors?.password && (
+                <p className="text-sm text-red-600 mt-1">{state.errors.password[0]}</p>
+              )}
             </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 px-4 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </button>
+            <SubmitButton />
           </form>
         </div>
 
