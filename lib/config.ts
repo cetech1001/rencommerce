@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+/**
+ * Server-only configuration
+ * Only use this in server components, server actions, and API routes
+ * DO NOT import this in client components
+ */
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production"])
@@ -20,11 +26,16 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().min(1).max(65535)),
 
-  // JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  // JWT_EXPIRES_IN: z.string().default("7d"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  JWT_EXPIRES_IN: z.string().default("7d"),
 });
 
 function validateEnv() {
+  // Only validate on server
+  if (typeof window !== "undefined") {
+    throw new Error("config.ts cannot be imported in client components");
+  }
+
   try {
     return envSchema.parse(process.env);
   } catch (error) {
@@ -58,10 +69,11 @@ export const config = {
     port: env.PORT,
     name: env.APP_NAME,
   },
-  // auth: {
-  //   jwtSecret: env.JWT_SECRET,
-  //   jwtExpiresIn: env.JWT_EXPIRES_IN,
-  // },
+  auth: {
+    jwtSecret: env.JWT_SECRET,
+    jwtExpiresIn: env.JWT_EXPIRES_IN,
+    sessionCookieName: "session",
+  },
 } as const;
 
 export type Config = typeof config;

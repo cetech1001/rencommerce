@@ -3,6 +3,7 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { createSession, setSessionCookie, deleteSessionCookie } from "@/lib/session";
 import type { ActionResponse, AuthUser } from "@/lib/types";
 
 const loginSchema = z.object({
@@ -52,6 +53,17 @@ export async function loginAction(
       };
     }
 
+    // Create session
+    const token = await createSession({
+      userID: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
+
+    // Set session cookie
+    await setSessionCookie(token);
+
     return {
       success: true,
       message: "Login successful",
@@ -69,6 +81,27 @@ export async function loginAction(
     return {
       success: false,
       message: "An unexpected error occurred. Please try again.",
+    };
+  }
+}
+
+/**
+ * Logout Action
+ * Clears the user session
+ */
+export async function logoutAction(): Promise<ActionResponse> {
+  try {
+    await deleteSessionCookie();
+
+    return {
+      success: true,
+      message: "Logged out successfully",
+    };
+  } catch (error) {
+    console.error("Logout error:", error);
+    return {
+      success: false,
+      message: "An error occurred during logout",
     };
   }
 }
