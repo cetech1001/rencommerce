@@ -1,39 +1,91 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { CartItem, CartContextType } from "@/lib/types";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const CART_STORAGE_KEY = "rencommerce_cart";
+
+// Helper function to generate unique cart item key
+const getCartItemKey = (productId: string, type: "rent" | "purchase") => {
+  return `${productId}_${type}`;
+};
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem(CART_STORAGE_KEY);
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        setItems(parsedCart);
+      }
+    } catch (error) {
+      console.error("Failed to load cart from localStorage:", error);
+    } finally {
+      setIsHydrated(true);
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (isHydrated) {
+      try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      } catch (error) {
+        console.error("Failed to save cart to localStorage:", error);
+      }
+    }
+  }, [items, isHydrated]);
 
   const addToCart = useCallback((item: CartItem) => {
     setItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.id === item.id);
-      if (existingItem) {
-        return prevItems.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
-        );
+      // Find existing item with same product ID and type
+      const cartKey = getCartItemKey(item.id, item.type);
+      const existingItemIndex = prevItems.findIndex(
+        (i) => getCartItemKey(i.id, i.type) === cartKey
+      );
+
+      if (existingItemIndex > -1) {
+        // Update quantity of existing item
+        const updatedItems = [...prevItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + item.quantity,
+        };
+        return updatedItems;
       }
+
+      // Add new item
       return [...prevItems, item];
     });
   }, []);
 
-  const removeFromCart = useCallback((id: string) => {
-    setItems((prevItems) => prevItems.filter((i) => i.id !== id));
+  const removeFromCart = useCallback((productId: string, type: "rent" | "purchase") => {
+    setItems((prevItems) => {
+      const cartKey = getCartItemKey(productId, type);
+      return prevItems.filter((i) => getCartItemKey(i.id, i.type) !== cartKey);
+    });
   }, []);
 
-  const updateQuantity = useCallback((id: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, type: "rent" | "purchase", quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(id);
+      removeFromCart(productId, type);
       return;
     }
-    setItems((prevItems) =>
-      prevItems.map((i) => (i.id === id ? { ...i, quantity } : i))
-    );
+
+    setItems((prevItems) => {
+      const cartKey = getCartItemKey(productId, type);
+      return prevItems.map((i) =>
+        getCartItemKey(i.id, i.type) === cartKey ? { ...i, quantity } : i
+      );
+    });
   }, [removeFromCart]);
 
   const clearCart = useCallback(() => {
@@ -53,7 +105,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [items]);
 
   const getBuyItems = useCallback(() => {
-    return items.filter((item) => item.type === "buy");
+    return items.filter((item) => item.type === "purchase");
+  }, [items]);
+
+  const getItemQuantity = useCallback((productId: string, type: "rent" | "purchase") => {
+    const cartKey = getCartItemKey(productId, type);
+    const item = items.find((i) => getCartItemKey(i.id, i.type) === cartKey);
+    return item?.quantity || 0;
   }, [items]);
 
   return (
@@ -68,6 +126,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         getTotalPrice,
         getRentItems,
         getBuyItems,
+        getItemQuantity,
       }}
     >
       {children}

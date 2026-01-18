@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from "lucide-react";
@@ -9,9 +10,43 @@ export default function Cart() {
   const { items, removeFromCart, updateQuantity, getTotalPrice, getRentItems, getBuyItems, clearCart } =
     useCart();
 
+  const [productStocks, setProductStocks] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+
   const rentItems = getRentItems();
   const buyItems = getBuyItems();
   const totalPrice = getTotalPrice();
+
+  // Fetch current stock for all items in cart
+  useEffect(() => {
+    const fetchProductStocks = async () => {
+      try {
+        const stockPromises = items.map(async (item) => {
+          const response = await fetch(`/api/products/${item.id}`);
+          const data = await response.json();
+          return { id: item.id, quantity: data.product?.quantity || 0 };
+        });
+
+        const stocks = await Promise.all(stockPromises);
+        const stockMap = stocks.reduce((acc, stock) => {
+          acc[stock.id] = stock.quantity;
+          return acc;
+        }, {} as Record<string, number>);
+
+        setProductStocks(stockMap);
+      } catch (error) {
+        console.error("Failed to fetch product stocks:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (items.length > 0) {
+      fetchProductStocks();
+    } else {
+      setLoading(false);
+    }
+  }, [items.length]);
 
   if (items.length === 0) {
     return (
@@ -66,28 +101,43 @@ export default function Cart() {
 
               <div className="space-y-6">
                 {items.map((item) => (
-                  <div key={item.id} className="flex gap-4 pb-6 border-b border-border last:border-b-0 last:pb-0">
+                  <div
+                    key={`${item.id}_${item.type}`}
+                    className="flex gap-4 pb-6 border-b border-border last:border-b-0 last:pb-0"
+                  >
                     {/* Product Image */}
-                    <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                    <Link
+                      href={`/product/${item.id}`}
+                      className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted group"
+                    >
                       <Image
                         src={item.image}
                         alt={item.name}
                         width={80}
                         height={80}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       />
-                    </div>
+                    </Link>
 
                     {/* Product Details */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{item.name}</h3>
+                          <Link
+                            href={`/product/${item.id}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            <h3 className="font-semibold text-foreground">{item.name}</h3>
+                          </Link>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {item.type === "rent" ? "Rental" : "Purchase"}
+                            {item.type === "rent" ? "Rental (per day)" : "Purchase"}
                           </p>
                           <p className="text-sm font-medium text-primary mt-2">
                             ${item.price.toFixed(2)}
+                            {item.type === "rent" && " / day"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Subtotal: ${(item.price * item.quantity).toFixed(2)}
                           </p>
                         </div>
 
@@ -95,29 +145,52 @@ export default function Cart() {
                         <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
                           <button
                             onClick={() =>
-                              updateQuantity(item.id, Math.max(1, item.quantity - 1))
+                              updateQuantity(item.id, item.type, Math.max(1, item.quantity - 1))
                             }
                             className="p-1 hover:bg-white rounded transition-colors"
+                            aria-label="Decrease quantity"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
                           <span className="px-3 font-medium text-sm">{item.quantity}</span>
                           <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            className="p-1 hover:bg-white rounded transition-colors"
+                            onClick={() => {
+                              const maxStock = productStocks[item.id] || 0;
+                              if (item.quantity < maxStock) {
+                                updateQuantity(item.id, item.type, item.quantity + 1);
+                              }
+                            }}
+                            disabled={!productStocks[item.id] || item.quantity >= productStocks[item.id]}
+                            className="p-1 hover:bg-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Increase quantity"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
+
+                      {/* Stock warning */}
+                      {productStocks[item.id] !== undefined && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {productStocks[item.id] === 0 ? (
+                            <span className="text-red-600 font-medium">Out of stock</span>
+                          ) : item.quantity >= productStocks[item.id] ? (
+                            <span className="text-orange-600 font-medium">
+                              Max available: {productStocks[item.id]}
+                            </span>
+                          ) : (
+                            <span>{productStocks[item.id]} available</span>
+                          )}
+                        </p>
+                      )}
                     </div>
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.id, item.type)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Remove from cart"
+                      aria-label="Remove from cart"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -130,7 +203,7 @@ export default function Cart() {
           {/* Checkout Options */}
           <div className="lg:col-span-1">
             {/* Order Summary */}
-            <div className="bg-white rounded-xl border border-border p-6 mb-6">
+            <div className="bg-white rounded-xl border border-border p-6 mb-6 sticky top-6">
               <h3 className="text-lg font-semibold text-foreground mb-6">Order Summary</h3>
 
               <div className="space-y-4 mb-6 pb-6 border-b border-border">
@@ -139,14 +212,14 @@ export default function Cart() {
                   <span className="font-medium text-foreground">${totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax</span>
+                  <span className="text-muted-foreground">Tax (10%)</span>
                   <span className="font-medium text-foreground">
                     ${(totalPrice * 0.1).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium text-foreground">Free</span>
+                  <span className="font-medium text-green-600">Free</span>
                 </div>
               </div>
 
@@ -158,27 +231,16 @@ export default function Cart() {
               </div>
 
               <div className="space-y-3">
-                {buyItems.length > 0 && (
-                  <Link
-                    href="/checkout/purchase"
-                    className="w-full py-3 px-4 rounded-lg bg-secondary text-white font-medium hover:bg-secondary/90 transition-all duration-200 text-center block"
-                  >
-                    Checkout Purchase ({buyItems.length})
-                  </Link>
-                )}
-
-                {rentItems.length > 0 && (
-                  <Link
-                    href="/checkout/rental"
-                    className="w-full py-3 px-4 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200 text-center block"
-                  >
-                    Checkout Rental ({rentItems.length})
-                  </Link>
-                )}
+                <Link
+                  href="/checkout"
+                  className="w-full py-3 px-4 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200 text-center block"
+                >
+                  Proceed to Checkout
+                </Link>
 
                 {buyItems.length > 0 && rentItems.length > 0 && (
                   <div className="text-xs text-muted-foreground text-center pt-2">
-                    💡 Tip: Checkout separately for purchase and rental items
+                    💡 Your cart contains both purchase and rental items
                   </div>
                 )}
               </div>

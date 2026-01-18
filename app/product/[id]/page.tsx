@@ -126,6 +126,8 @@ export default function ProductDetail() {
   }
 
   const isRental = mode === "rent";
+  const canRent = product.rentalPrice > 0;
+  const canPurchase = product.purchasePrice > 0;
   const basePrice = isRental ? product.rentalPrice : product.purchasePrice;
   const salePrice = isRental ? product.rentalSalePrice : product.purchaseSalePrice;
   const hasDiscount = !!(salePrice && salePrice < basePrice);
@@ -135,6 +137,15 @@ export default function ProductDetail() {
     : 0;
 
   const allImages = [product.image, ...product.additionalImages];
+
+  // Automatically switch mode if current mode is not available
+  useEffect(() => {
+    if (mode === "rent" && !canRent && canPurchase) {
+      setMode("purchase");
+    } else if (mode === "purchase" && !canPurchase && canRent) {
+      setMode("rent");
+    }
+  }, [mode, canRent, canPurchase]);
 
   const handleAddToCart = () => {
     addToCart({
@@ -317,35 +328,45 @@ export default function ProductDetail() {
             </div>
 
             {/* Mode Toggle */}
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-foreground mb-3 block">
-                Choose Option:
-              </label>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setMode("rent")}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                    mode === "rent"
-                      ? "bg-primary text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  Rent
-                </button>
-                <button
-                  onClick={() => setMode("purchase")}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                    mode === "purchase"
-                      ? "bg-secondary text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  Purchase
-                </button>
+            {(canRent || canPurchase) && (
+              <div className="mb-6">
+                <label className="text-sm font-semibold text-foreground mb-3 block">
+                  Choose Option:
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setMode("rent")}
+                    disabled={!canRent}
+                    className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                      mode === "rent"
+                        ? "bg-primary text-white"
+                        : canRent
+                        ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                        : "bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Rent
+                    {!canRent && <span className="text-xs ml-1">(N/A)</span>}
+                  </button>
+                  <button
+                    onClick={() => setMode("purchase")}
+                    disabled={!canPurchase}
+                    className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                      mode === "purchase"
+                        ? "bg-secondary text-white"
+                        : canPurchase
+                        ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                        : "bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
+                    }`}
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Purchase
+                    {!canPurchase && <span className="text-xs ml-1">(N/A)</span>}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Price Section */}
             <div className="mb-8 p-6 bg-white rounded-xl border border-border">
@@ -386,7 +407,7 @@ export default function ProductDetail() {
 
               <button
                 onClick={handleBuyNow}
-                disabled={product.quantity <= 0}
+                disabled={product.quantity <= 0 || (isRental && !canRent) || (!isRental && !canPurchase)}
                 className={`w-full py-4 px-6 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
                   isRental
                     ? "bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -396,22 +417,24 @@ export default function ProductDetail() {
                 {isRental ? (
                   <>
                     <Calendar className="w-5 h-5" />
-                    Rent Now
+                    {canRent ? "Rent Now" : "Not Available for Rent"}
                   </>
                 ) : (
                   <>
                     <ShoppingCart className="w-5 h-5" />
-                    Buy Now
+                    {canPurchase ? "Buy Now" : "Not Available for Purchase"}
                   </>
                 )}
               </button>
 
               <button
                 onClick={handleAddToCart}
-                disabled={product.quantity <= 0}
+                disabled={product.quantity <= 0 || (isRental && !canRent) || (!isRental && !canPurchase)}
                 className="w-full py-3 px-6 rounded-lg font-medium border-2 border-muted text-foreground hover:border-primary hover:text-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add to Cart
+                {(isRental && !canRent) || (!isRental && !canPurchase)
+                  ? "Not Available"
+                  : "Add to Cart"}
               </button>
             </div>
 
