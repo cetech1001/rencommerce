@@ -12,6 +12,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { useCart } from "@/lib/contexts";
+import { getAuthSession } from "@/lib/actions/auth";
+import { validateCoupon } from "@/lib/actions/coupons";
+import { createOrder } from "@/lib/actions/checkout";
 
 interface AppliedCoupon {
   code: string;
@@ -80,14 +83,13 @@ export default function CheckoutPage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/session");
-      const data = await response.json();
+      const session = await getAuthSession();
 
-      if (data.user && data.user.role === "CUSTOMER") {
+      if (session.user && session.user.role === "CUSTOMER") {
         setIsAuthenticated(true);
-        setEmail(data.user.email || "");
-        setName(data.user.name || "");
-        setPhone(data.user.phone || "");
+        setEmail(session.user.email || "");
+        setName(session.user.name || "");
+        setPhone(session.user.phone || "");
       } else {
         setIsAuthenticated(false);
       }
@@ -146,50 +148,19 @@ export default function CheckoutPage() {
     setCouponLoading(true);
     setErrors([]);
 
-    try {
-      const response = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: couponCode, cartTotal: subtotal }),
-      });
+    const result = await validateCoupon({ code: couponCode, cartTotal: subtotal });
 
-      const data = await response.json();
-
-      if (response.ok && data.coupon) {
-        setAppliedCoupon(data.coupon);
-        setCouponCode("");
-      } else {
-        setErrors([data.error || "Invalid coupon code"]);
-      }
-    } catch (error) {
-      setErrors(["Failed to validate coupon"]);
-    } finally {
-      setCouponLoading(false);
+    if (result.success && result.coupon) {
+      setAppliedCoupon(result.coupon);
+      setCouponCode("");
+    } else {
+      setErrors([result.error || "Invalid coupon code"]);
     }
+
+    setCouponLoading(false);
   };
 
-  const handleCreateAccount = async () => {
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, phone, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsAuthenticated(true);
-        return true;
-      } else {
-        setErrors([data.error || "Failed to create account"]);
-        return false;
-      }
-    } catch (error) {
-      setErrors(["Failed to create account"]);
-      return false;
-    }
-  };
+  // This function is no longer needed - account creation is now handled in createOrder action
 
   const validateForm = () => {
     const newErrors: string[] = [];
@@ -249,76 +220,55 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
-    // Create account if needed
-    if (!isAuthenticated) {
-      const accountCreated = await handleCreateAccount();
-      if (!accountCreated) {
-        setLoading(false);
-        return;
-      }
-    }
+    // Prepare order data
+    const orderData = {
+      items: items.map((item) => ({
+        productID: item.id,
+        quantity: item.quantity,
+        price: item.price,
+        type: item.type.toUpperCase() as "RENT" | "PURCHASE",
+        rentalStartDate: item.type === "rent" ? rentalDates[item.id]?.startDate : null,
+        rentalEndDate: item.type === "rent" ? rentalDates[item.id]?.endDate : null,
+      })),
+      billingAddress: {
+        fullName: billingFullName,
+        addressLine1: billingAddress1,
+        addressLine2: billingAddress2,
+        city: billingCity,
+        state: billingState,
+        postalCode: billingPostalCode,
+        country: billingCountry,
+      },
+      shippingAddress: {
+        fullName: sameAsBilling ? billingFullName : shippingFullName,
+        addressLine1: sameAsBilling ? billingAddress1 : shippingAddress1,
+        addressLine2: sameAsBilling ? billingAddress2 : shippingAddress2,
+        city: sameAsBilling ? billingCity : shippingCity,
+        state: sameAsBilling ? billingState : shippingState,
+        postalCode: sameAsBilling ? billingPostalCode : shippingPostalCode,
+        country: sameAsBilling ? billingCountry : shippingCountry,
+      },
+      sameAsBilling,
+      totalAmount: grandTotal,
+      shippingFee,
+      couponCode: appliedCoupon?.code,
+      accountData: !isAuthenticated
+        ? {
+            email,
+            name,
+            phone,
+            password,
+          }
+        : undefined,
+    };
 
-    try {
-      // Prepare order data
-      const orderData = {
-        items: items.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-          price: item.price,
-          type: item.type.toUpperCase(),
-          rentalStartDate: item.type === "rent" ? rentalDates[item.id]?.startDate : null,
-          rentalEndDate: item.type === "rent" ? rentalDates[item.id]?.endDate : null,
-        })),
-        billingAddress: {
-          fullName: billingFullName,
-          addressLine1: billingAddress1,
-          addressLine2: billingAddress2,
-          city: billingCity,
-          state: billingState,
-          postalCode: billingPostalCode,
-          country: billingCountry,
-        },
-        shippingAddress: sameAsBilling
-          ? {
-              fullName: billingFullName,
-              addressLine1: billingAddress1,
-              addressLine2: billingAddress2,
-              city: billingCity,
-              state: billingState,
-              postalCode: billingPostalCode,
-              country: billingCountry,
-            }
-          : {
-              fullName: shippingFullName,
-              addressLine1: shippingAddress1,
-              addressLine2: shippingAddress2,
-              city: shippingCity,
-              state: shippingState,
-              postalCode: shippingPostalCode,
-              country: shippingCountry,
-            },
-        totalAmount: grandTotal,
-        shippingFee,
-        couponCode: appliedCoupon?.code,
-      };
+    const result = await createOrder(orderData);
 
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.orderId) {
-        // Redirect to payment page
-        router.push(`/payment/${data.orderId}`);
-      } else {
-        setErrors([data.error || "Failed to create order"]);
-        setLoading(false);
-      }
-    } catch (error) {
-      setErrors(["Failed to process checkout"]);
+    if (result.success && result.orderID) {
+      // Redirect to payment page
+      router.push(`/payment/${result.orderID}`);
+    } else {
+      setErrors(result.details || [result.error || "Failed to create order"]);
       setLoading(false);
     }
   };

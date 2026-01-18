@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CheckCircle, Package, Loader2, ArrowRight } from "lucide-react";
+import { getOrderByID } from "@/lib/queries/orders";
 
 interface OrderData {
   id: string;
@@ -34,11 +35,10 @@ export default function OrderConfirmationPage() {
 
   const fetchOrder = async () => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`);
-      const data = await response.json();
+      const orderData = await getOrderByID(orderId);
 
-      if (response.ok && data.order) {
-        setOrder(data.order);
+      if (orderData) {
+        setOrder(orderData);
       }
     } catch (err) {
       console.error("Failed to load order");

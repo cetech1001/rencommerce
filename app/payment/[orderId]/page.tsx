@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Lock, Copy, Check, Zap, DollarSign, Bitcoin, Loader2 } from "lucide-react";
 import { useCart } from "@/lib/contexts";
+import { getOrderByID } from "@/lib/queries/orders";
+import { processPayment } from "@/lib/actions/payment";
 
 type PaymentMethod = "CARD" | "BANK_TRANSFER" | "CRYPTO";
 
@@ -83,13 +85,12 @@ export default function PaymentPage() {
 
   const fetchOrder = async () => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`);
-      const data = await response.json();
+      const orderData = await getOrderByID(orderId);
 
-      if (response.ok && data.order) {
-        setOrder(data.order);
+      if (orderData) {
+        setOrder(orderData);
       } else {
-        setError(data.error || "Order not found");
+        setError("Order not found");
       }
     } catch (err) {
       setError("Failed to load order");
@@ -144,36 +145,25 @@ export default function PaymentPage() {
 
     setIsProcessing(true);
 
-    try {
-      // Submit payment
-      const response = await fetch(`/api/orders/${orderId}/payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paymentMethod: paymentState.method,
-          paymentInfo: {
-            cardName: paymentState.cardName,
-            cardNumberLast4: paymentState.cardNumber.slice(-4),
-            accountName: paymentState.accountName,
-            bankName: paymentState.bankName,
-            walletAddress: paymentState.walletAddress,
-            crypto: paymentState.selectedCrypto,
-          },
-        }),
-      });
+    const result = await processPayment({
+      orderID: orderId,
+      paymentMethod: paymentState.method,
+      paymentInfo: {
+        cardName: paymentState.cardName,
+        cardNumberLast4: paymentState.cardNumber.slice(-4),
+        accountName: paymentState.accountName,
+        bankName: paymentState.bankName,
+        walletAddress: paymentState.walletAddress,
+        crypto: paymentState.selectedCrypto,
+      },
+    });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Clear cart and redirect
-        clearCart();
-        router.push(`/order-confirmation/${orderId}`);
-      } else {
-        setError(data.error || "Payment failed");
-        setIsProcessing(false);
-      }
-    } catch (err) {
-      setError("Failed to process payment");
+    if (result.success) {
+      // Clear cart and redirect
+      clearCart();
+      router.push(`/order-confirmation/${orderId}`);
+    } else {
+      setError(result.error || "Payment failed");
       setIsProcessing(false);
     }
   };
