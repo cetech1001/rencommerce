@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Users, Package, ShoppingCart, CreditCard, TrendingUp, AlertCircle } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -17,30 +16,20 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <>
-      {/* Admin Header */}
-      <section className="bg-gradient-to-r from-primary to-secondary py-8 sm:py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                Admin Dashboard
-              </h1>
-              <p className="text-white/80">
-                Manage users, products, orders, and payments
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg">
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-white text-sm font-medium">Live</span>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Dashboard
+        </h1>
+        <p className="text-muted-foreground">
+          Overview of your store performance
+        </p>
+      </div>
 
       {/* Stats Grid */}
-      <section className="py-8 sm:py-12 bg-muted/50">
-        <div className="container mx-auto px-4">
+      <div className="mb-8">
+        <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {stats.map((stat, idx) => {
               const Icon = stat.icon;
@@ -68,11 +57,10 @@ export default function AdminDashboard() {
             })}
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Dashboard Content */}
-      <section className="py-8 sm:py-12 bg-white">
-        <div className="container mx-auto px-4">
+      <div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6 sm:space-y-8">
@@ -141,21 +129,6 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               </div>
-
-              {/* Analytics Chart Placeholder */}
-              <div className="bg-white rounded-lg border border-border p-6 sm:p-8">
-                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4">
-                  Revenue Trend
-                </h2>
-                <div className="h-64 bg-gradient-to-b from-primary/10 to-secondary/10 rounded-lg flex items-center justify-center border border-border">
-                  <div className="text-center">
-                    <TrendingUp className="w-12 h-12 text-primary mx-auto mb-3 opacity-50" />
-                    <p className="text-muted-foreground">
-                      Analytics chart will be implemented here
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Sidebar */}
@@ -181,33 +154,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* System Status */}
-              <div className="bg-white rounded-lg border border-border p-6">
-                <h3 className="text-lg font-bold text-foreground mb-4">
-                  System Status
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      API Server
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-accent" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Database
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-accent" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Storage
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-accent" />
-                  </div>
-                </div>
-              </div>
-
               {/* Alerts */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex gap-3">
@@ -224,74 +170,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Admin Features Grid */}
-      <section className="py-12 sm:py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">
-            Admin Features
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                title: "User Management",
-                desc: "Create, edit, and manage customer accounts and permissions",
-              },
-              {
-                title: "Product Catalog",
-                desc: "Add, edit, and organize your renewable energy equipment catalog",
-              },
-              {
-                title: "Order Management",
-                desc: "Track, process, and manage customer orders and shipments",
-              },
-              {
-                title: "Payment Processing",
-                desc: "Manage transactions, refunds, and payment settings",
-              },
-              {
-                title: "Analytics & Reports",
-                desc: "View detailed analytics and generate business reports",
-              },
-              {
-                title: "Settings",
-                desc: "Configure system settings, emails, and integrations",
-              },
-            ].map((feature, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-lg border border-border p-6 hover:border-primary transition-all hover:shadow-lg"
-              >
-                <h3 className="font-semibold text-foreground mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Coming Soon Section */}
-      <section className="py-12 sm:py-16 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-            Full Admin Suite Coming Soon
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            The complete admin dashboard with all management features is being
-            developed. Stay tuned for the full release!
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </section>
-    </>
+      </div>
+    </div>
   );
 }
