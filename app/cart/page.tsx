@@ -21,6 +21,9 @@ export default function Cart() {
   const rentItems = getRentItems();
   const buyItems = getBuyItems();
   const totalPrice = getTotalPrice();
+  const shippingFee = totalPrice < 200 ? 5.99 : 0;
+  const tax = totalPrice * 0.1;
+  const grandTotal = totalPrice + tax + shippingFee;
 
   // Fetch current stock for all items in cart
   useEffect(() => {
@@ -245,21 +248,26 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax (10%)</span>
-                  <span className="font-medium text-foreground">
-                    ${(totalPrice * 0.1).toFixed(2)}
-                  </span>
+                  <span className="font-medium text-foreground">${tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium text-green-600">Free</span>
+                  {shippingFee > 0 ? (
+                    <span className="font-medium text-foreground">${shippingFee.toFixed(2)}</span>
+                  ) : (
+                    <span className="font-medium text-green-600">Free</span>
+                  )}
                 </div>
+                {totalPrice < 200 && totalPrice > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    💡 Add ${(200 - totalPrice).toFixed(2)} more for free shipping
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between mb-6">
                 <span className="font-semibold text-foreground">Total</span>
-                <span className="text-xl font-bold text-primary">
-                  ${(totalPrice * 1.1).toFixed(2)}
-                </span>
+                <span className="text-xl font-bold text-primary">${grandTotal.toFixed(2)}</span>
               </div>
 
               <div className="space-y-3">

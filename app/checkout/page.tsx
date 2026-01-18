@@ -6,12 +6,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  ShoppingCart,
   Calendar,
-  CheckCircle,
   AlertCircle,
-  X,
   Tag,
+  Loader2,
 } from "lucide-react";
 import { useCart } from "@/lib/contexts";
 
@@ -24,7 +22,7 @@ interface AppliedCoupon {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getRentItems, getBuyItems, clearCart } = useCart();
+  const { items, getRentItems, getBuyItems } = useCart();
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -33,21 +31,36 @@ export default function CheckoutPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Form state
+  // User info
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [postalCode, setPostalCode] = useState("");
   const [phone, setPhone] = useState("");
 
   // Account creation
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Rental-specific state (per-item)
+  // Billing Address
+  const [billingFullName, setBillingFullName] = useState("");
+  const [billingAddress1, setBillingAddress1] = useState("");
+  const [billingAddress2, setBillingAddress2] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingState, setBillingState] = useState("");
+  const [billingPostalCode, setBillingPostalCode] = useState("");
+  const [billingCountry, setBillingCountry] = useState("United States");
+
+  // Shipping Address
+  const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [shippingFullName, setShippingFullName] = useState("");
+  const [shippingAddress1, setShippingAddress1] = useState("");
+  const [shippingAddress2, setShippingAddress2] = useState("");
+  const [shippingCity, setShippingCity] = useState("");
+  const [shippingState, setShippingState] = useState("");
+  const [shippingPostalCode, setShippingPostalCode] = useState("");
+  const [shippingCountry, setShippingCountry] = useState("United States");
+
+  // Rental dates (per-item)
   const [rentalDates, setRentalDates] = useState<Record<string, { startDate: string; endDate: string }>>({});
-  const [rentalAgreement, setRentalAgreement] = useState(false);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState("");
@@ -57,14 +70,11 @@ export default function CheckoutPage() {
   const rentItems = getRentItems();
   const buyItems = getBuyItems();
   const hasRentals = rentItems.length > 0;
-  const hasPurchases = buyItems.length > 0;
 
   useEffect(() => {
     if (items.length === 0) {
       router.push("/cart");
     }
-
-    // Check authentication
     checkAuth();
   }, [items, router]);
 
@@ -77,6 +87,7 @@ export default function CheckoutPage() {
         setIsAuthenticated(true);
         setEmail(data.user.email || "");
         setName(data.user.name || "");
+        setPhone(data.user.phone || "");
       } else {
         setIsAuthenticated(false);
       }
@@ -111,7 +122,6 @@ export default function CheckoutPage() {
 
   const calculateDiscount = () => {
     if (!appliedCoupon) return 0;
-
     const subtotal = calculateSubtotal();
 
     if (appliedCoupon.scope === "CART") {
@@ -120,15 +130,15 @@ export default function CheckoutPage() {
       }
       return appliedCoupon.discountValue;
     }
-
-    return 0; // Item-level discounts would be calculated differently
+    return 0;
   };
 
   const subtotal = calculateSubtotal();
   const discount = calculateDiscount();
   const discountedTotal = subtotal - discount;
+  const shippingFee = discountedTotal < 200 ? 5.99 : 0;
   const tax = discountedTotal * 0.1;
-  const grandTotal = discountedTotal + tax;
+  const grandTotal = discountedTotal + tax + shippingFee;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -140,44 +150,71 @@ export default function CheckoutPage() {
       const response = await fetch("/api/coupons/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: couponCode,
-          cartTotal: subtotal,
-        }),
+        body: JSON.stringify({ code: couponCode, cartTotal: subtotal }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (response.ok && data.coupon) {
+        setAppliedCoupon(data.coupon);
+        setCouponCode("");
+      } else {
         setErrors([data.error || "Invalid coupon code"]);
-        setCouponLoading(false);
-        return;
       }
-
-      setAppliedCoupon(data.coupon);
-      setCouponCode("");
     } catch (error) {
-      console.error("Coupon validation error:", error);
-      setErrors(["Failed to apply coupon"]);
+      setErrors(["Failed to validate coupon"]);
     } finally {
       setCouponLoading(false);
     }
   };
 
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setErrors([]);
+  const handleCreateAccount = async () => {
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, phone, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsAuthenticated(true);
+        return true;
+      } else {
+        setErrors([data.error || "Failed to create account"]);
+        return false;
+      }
+    } catch (error) {
+      setErrors(["Failed to create account"]);
+      return false;
+    }
   };
 
   const validateForm = () => {
     const newErrors: string[] = [];
 
-    if (!email || !email.includes("@")) newErrors.push("Valid email is required");
+    if (!email) newErrors.push("Email is required");
     if (!name) newErrors.push("Name is required");
-    if (!address) newErrors.push("Address is required");
-    if (!city) newErrors.push("City is required");
-    if (!postalCode) newErrors.push("Postal code is required");
-    if (!phone) newErrors.push("Phone number is required");
+    if (!phone) newErrors.push("Phone is required");
+
+    // Billing address
+    if (!billingFullName) newErrors.push("Billing name is required");
+    if (!billingAddress1) newErrors.push("Billing address is required");
+    if (!billingCity) newErrors.push("Billing city is required");
+    if (!billingState) newErrors.push("Billing state is required");
+    if (!billingPostalCode) newErrors.push("Billing postal code is required");
+    if (!billingCountry) newErrors.push("Billing country is required");
+
+    // Shipping address (if different)
+    if (!sameAsBilling) {
+      if (!shippingFullName) newErrors.push("Shipping name is required");
+      if (!shippingAddress1) newErrors.push("Shipping address is required");
+      if (!shippingCity) newErrors.push("Shipping city is required");
+      if (!shippingState) newErrors.push("Shipping state is required");
+      if (!shippingPostalCode) newErrors.push("Shipping postal code is required");
+      if (!shippingCountry) newErrors.push("Shipping country is required");
+    }
 
     // Account creation validation
     if (!isAuthenticated) {
@@ -193,66 +230,14 @@ export default function CheckoutPage() {
     if (hasRentals) {
       rentItems.forEach((item) => {
         const dates = rentalDates[item.id];
-        if (!dates?.startDate) {
-          newErrors.push(`${item.name}: Rental start date is required`);
-        }
-        if (!dates?.endDate) {
-          newErrors.push(`${item.name}: Rental end date is required`);
-        }
-        if (dates?.startDate && dates?.endDate) {
-          if (new Date(dates.startDate) >= new Date(dates.endDate)) {
-            newErrors.push(`${item.name}: End date must be after start date`);
-          }
+        if (!dates || !dates.startDate || !dates.endDate) {
+          newErrors.push(`Please select rental dates for ${item.name}`);
         }
       });
-
-      if (!rentalAgreement) {
-        newErrors.push("You must agree to the rental terms");
-      }
     }
 
     setErrors(newErrors);
     return newErrors.length === 0;
-  };
-
-  const handleCreateAccount = async () => {
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          name,
-          password,
-          role: "CUSTOMER",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrors([data.error || "Failed to create account"]);
-        return false;
-      }
-
-      // Auto-login after registration
-      const loginResponse = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (loginResponse.ok) {
-        setIsAuthenticated(true);
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error("Account creation error:", error);
-      setErrors(["Failed to create account"]);
-      return false;
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -274,49 +259,66 @@ export default function CheckoutPage() {
     }
 
     try {
-      // Prepare items with rental dates
-      const orderItems = items.map((item) => ({
-        productId: item.id,
-        quantity: item.quantity,
-        type: item.type,
-        ...(item.type === "rent" && rentalDates[item.id]
+      // Prepare order data
+      const orderData = {
+        items: items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price,
+          type: item.type.toUpperCase(),
+          rentalStartDate: item.type === "rent" ? rentalDates[item.id]?.startDate : null,
+          rentalEndDate: item.type === "rent" ? rentalDates[item.id]?.endDate : null,
+        })),
+        billingAddress: {
+          fullName: billingFullName,
+          addressLine1: billingAddress1,
+          addressLine2: billingAddress2,
+          city: billingCity,
+          state: billingState,
+          postalCode: billingPostalCode,
+          country: billingCountry,
+        },
+        shippingAddress: sameAsBilling
           ? {
-              rentalStartDate: rentalDates[item.id].startDate,
-              rentalEndDate: rentalDates[item.id].endDate,
+              fullName: billingFullName,
+              addressLine1: billingAddress1,
+              addressLine2: billingAddress2,
+              city: billingCity,
+              state: billingState,
+              postalCode: billingPostalCode,
+              country: billingCountry,
             }
-          : {}),
-      }));
+          : {
+              fullName: shippingFullName,
+              addressLine1: shippingAddress1,
+              addressLine2: shippingAddress2,
+              city: shippingCity,
+              state: shippingState,
+              postalCode: shippingPostalCode,
+              country: shippingCountry,
+            },
+        totalAmount: grandTotal,
+        shippingFee,
+        couponCode: appliedCoupon?.code,
+      };
 
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: orderItems,
-          customerInfo: {
-            email,
-            name,
-            address,
-            city,
-            postalCode,
-            phone,
-          },
-          couponCode: appliedCoupon?.code,
-        }),
+        body: JSON.stringify(orderData),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        setErrors([data.error || "Checkout failed"]);
+      if (response.ok && data.orderId) {
+        // Redirect to payment page
+        router.push(`/payment/${data.orderId}`);
+      } else {
+        setErrors([data.error || "Failed to create order"]);
         setLoading(false);
-        return;
       }
-
-      clearCart();
-      router.push(`/checkout/success?orderId=${data.orderId}`);
     } catch (error) {
-      console.error("Checkout error:", error);
-      setErrors(["An error occurred during checkout. Please try again."]);
+      setErrors(["Failed to process checkout"]);
       setLoading(false);
     }
   };
@@ -338,13 +340,14 @@ export default function CheckoutPage() {
 
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8">Checkout</h1>
 
+        {/* Error Display */}
         {errors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-red-900 mb-2">Please fix the following errors:</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
                   {errors.map((error, idx) => (
                     <li key={idx}>{error}</li>
                   ))}
@@ -357,7 +360,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Authentication Status */}
+            {/* Account Creation */}
             {!isAuthenticated && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4">Create Account</h2>
@@ -371,107 +374,145 @@ export default function CheckoutPage() {
               {/* Account Creation Fields */}
               {!isAuthenticated && (
                 <div className="bg-white rounded-xl border border-border p-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Create Account</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Account Information</h2>
                   <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Password *
+                        Phone Number *
                       </label>
                       <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="Minimum 6 characters"
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Confirm Password *
-                      </label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="Re-enter password"
-                      />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Password *
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Confirm Password *
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Contact Information */}
+              {/* Billing Address */}
               <div className="bg-white rounded-xl border border-border p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Contact Information</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">Billing Address</h2>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={isAuthenticated}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted"
-                      placeholder="your@email.com"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Full Name *
                     </label>
                     <input
                       type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="John Doe"
+                      required
+                      value={billingFullName}
+                      onChange={(e) => setBillingFullName(e.target.value)}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="+1 (555) 000-0000"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              {/* Shipping Address */}
-              <div className="bg-white rounded-xl border border-border p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Shipping Address</h2>
-                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Street Address *
+                      Address Line 1 *
                     </label>
                     <input
                       type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="123 Main St"
+                      required
+                      value={billingAddress1}
+                      onChange={(e) => setBillingAddress1(e.target.value)}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Street address, P.O. box"
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Address Line 2
+                    </label>
+                    <input
+                      type="text"
+                      value={billingAddress2}
+                      onChange={(e) => setBillingAddress2(e.target.value)}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Apartment, suite, unit, building, floor, etc."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         City *
                       </label>
                       <input
                         type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="New York"
+                        required
+                        value={billingCity}
+                        onChange={(e) => setBillingCity(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        State *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={billingState}
+                        onChange={(e) => setBillingState(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -480,131 +521,195 @@ export default function CheckoutPage() {
                       </label>
                       <input
                         type="text"
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="10001"
+                        required
+                        value={billingPostalCode}
+                        onChange={(e) => setBillingPostalCode(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Country *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={billingCountry}
+                      onChange={(e) => setBillingCountry(e.target.value)}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Rental Details (Per-Item) */}
-              {hasRentals && (
-                <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-semibold text-foreground">Rental Details</h2>
-                  </div>
+              {/* Shipping Address */}
+              <div className="bg-white rounded-xl border border-border p-6">
+                <h2 className="text-xl font-semibold text-foreground mb-4">Shipping Address</h2>
 
-                  <div className="space-y-6">
-                    {rentItems.map((item) => {
-                      const days = calculateRentalDays(item.id);
-                      return (
-                        <div key={`${item.id}_${item.type}`} className="bg-white rounded-lg p-4 border border-blue-200">
-                          <div className="flex items-start gap-3 mb-4">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              width={60}
-                              height={60}
-                              className="w-15 h-15 rounded-lg object-cover"
-                            />
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-foreground">{item.name}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Qty: {item.quantity} × ${item.price.toFixed(2)}/day
-                              </p>
-                            </div>
-                          </div>
+                <div className="mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sameAsBilling}
+                      onChange={(e) => setSameAsBilling(e.target.checked)}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-foreground">
+                      Same as billing address
+                    </span>
+                  </label>
+                </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-foreground mb-2">
-                                Start Date *
-                              </label>
-                              <input
-                                type="date"
-                                value={rentalDates[item.id]?.startDate || ""}
-                                onChange={(e) =>
-                                  setRentalDates((prev) => ({
-                                    ...prev,
-                                    [item.id]: {
-                                      ...prev[item.id],
-                                      startDate: e.target.value,
-                                    },
-                                  }))
-                                }
-                                min={new Date().toISOString().split("T")[0]}
-                                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-foreground mb-2">
-                                End Date *
-                              </label>
-                              <input
-                                type="date"
-                                value={rentalDates[item.id]?.endDate || ""}
-                                onChange={(e) =>
-                                  setRentalDates((prev) => ({
-                                    ...prev,
-                                    [item.id]: {
-                                      ...prev[item.id],
-                                      endDate: e.target.value,
-                                    },
-                                  }))
-                                }
-                                min={
-                                  rentalDates[item.id]?.startDate ||
-                                  new Date().toISOString().split("T")[0]
-                                }
-                                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                              />
-                            </div>
-                          </div>
-
-                          {days > 0 && (
-                            <div className="mt-3 p-3 bg-blue-100 rounded-lg">
-                              <p className="text-sm text-foreground">
-                                <span className="font-semibold">Rental Period:</span> {days}{" "}
-                                {days === 1 ? "day" : "days"}
-                              </p>
-                              <p className="text-sm text-primary font-semibold mt-1">
-                                Total: ${(item.price * item.quantity * days).toFixed(2)}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Rental Agreement */}
-                    <div className="bg-white rounded-lg p-4 border border-blue-200">
-                      <h3 className="font-semibold text-foreground mb-2">Rental Agreement</h3>
-                      <div className="text-sm text-muted-foreground space-y-2 mb-4">
-                        <p>By renting items from our store, you agree to:</p>
-                        <ul className="list-disc list-inside space-y-1 ml-2">
-                          <li>Return all rented items in the same condition as received</li>
-                          <li>Be responsible for any damage or loss during the rental period</li>
-                          <li>Return items by the end date or incur additional daily charges</li>
-                          <li>Provide valid identification and payment information</li>
-                          <li>Pay a security deposit which will be refunded upon item return</li>
-                        </ul>
-                      </div>
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={rentalAgreement}
-                          onChange={(e) => setRentalAgreement(e.target.checked)}
-                          className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary"
-                        />
-                        <span className="text-sm text-foreground">
-                          I have read and agree to the rental terms and conditions *
-                        </span>
+                {!sameAsBilling && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Full Name *
                       </label>
+                      <input
+                        type="text"
+                        required
+                        value={shippingFullName}
+                        onChange={(e) => setShippingFullName(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Address Line 1 *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={shippingAddress1}
+                        onChange={(e) => setShippingAddress1(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Street address, P.O. box"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Address Line 2
+                      </label>
+                      <input
+                        type="text"
+                        value={shippingAddress2}
+                        onChange={(e) => setShippingAddress2(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Apartment, suite, unit, building, floor, etc."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          City *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={shippingCity}
+                          onChange={(e) => setShippingCity(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          State *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={shippingState}
+                          onChange={(e) => setShippingState(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Postal Code *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={shippingPostalCode}
+                          onChange={(e) => setShippingPostalCode(e.target.value)}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Country *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={shippingCountry}
+                        onChange={(e) => setShippingCountry(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Rental Dates */}
+              {hasRentals && (
+                <div className="bg-white rounded-xl border border-border p-6">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Rental Periods</h2>
+                  <div className="space-y-6">
+                    {rentItems.map((item) => (
+                      <div key={item.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+                        <h3 className="font-medium text-foreground mb-3">{item.name}</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              Start Date *
+                            </label>
+                            <input
+                              type="date"
+                              required
+                              value={rentalDates[item.id]?.startDate || ""}
+                              onChange={(e) =>
+                                setRentalDates({
+                                  ...rentalDates,
+                                  [item.id]: { ...rentalDates[item.id], startDate: e.target.value },
+                                })
+                              }
+                              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              End Date *
+                            </label>
+                            <input
+                              type="date"
+                              required
+                              value={rentalDates[item.id]?.endDate || ""}
+                              onChange={(e) =>
+                                setRentalDates({
+                                  ...rentalDates,
+                                  [item.id]: { ...rentalDates[item.id], endDate: e.target.value },
+                                })
+                              }
+                              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                        {rentalDates[item.id]?.startDate && rentalDates[item.id]?.endDate && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Duration: {calculateRentalDays(item.id)} day(s)
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -613,174 +718,106 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 px-6 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <>Processing...</>
-                ) : (
                   <>
-                    <CheckCircle className="w-5 h-5" />
-                    Complete Order
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing...
                   </>
+                ) : (
+                  "Continue to Payment"
                 )}
               </button>
             </form>
           </div>
 
-          {/* Order Summary with Coupon */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Coupon Code */}
-            <div className="bg-white rounded-xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5" />
-                Coupon Code
-              </h3>
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl border border-border p-6 sticky top-6">
+              <h3 className="text-lg font-semibold text-foreground mb-6">Order Summary</h3>
 
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="Enter code"
-                  className="flex-1 px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                  disabled={!!appliedCoupon}
-                />
-                <button
-                  onClick={handleApplyCoupon}
-                  disabled={couponLoading || !!appliedCoupon || !couponCode.trim()}
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  {couponLoading ? "..." : "Apply"}
-                </button>
+              {/* Items */}
+              <div className="space-y-3 mb-6 pb-6 border-b border-border max-h-64 overflow-y-auto">
+                {items.map((item) => (
+                  <div key={`${item.id}_${item.type}`} className="flex gap-3">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={60}
+                      height={60}
+                      className="w-15 h-15 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Qty: {item.quantity} × ${item.price.toFixed(2)}
+                        {item.type === "rent" && rentalDates[item.id]?.startDate && rentalDates[item.id]?.endDate
+                          ? ` × ${calculateRentalDays(item.id)} days`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Applied Coupon Banner */}
-              {appliedCoupon && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  <div className="flex-1 text-sm">
-                    <p className="font-semibold text-green-900">
-                      Coupon "{appliedCoupon.code}" applied!
-                    </p>
-                    <p className="text-green-700">
-                      {appliedCoupon.discountType === "PERCENTAGE"
-                        ? `${appliedCoupon.discountValue}% off`
-                        : `$${appliedCoupon.discountValue.toFixed(2)} off`}
-                    </p>
-                  </div>
+              {/* Coupon */}
+              <div className="mb-6 pb-6 border-b border-border">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Coupon code"
+                    disabled={!!appliedCoupon}
+                    className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-100"
+                  />
                   <button
-                    onClick={handleRemoveCoupon}
-                    className="p-1 hover:bg-green-100 rounded transition-colors"
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !!appliedCoupon || !couponCode.trim()}
+                    className="px-4 py-2 text-sm font-medium bg-muted hover:bg-muted/80 rounded-lg disabled:opacity-50"
                   >
-                    <X className="w-4 h-4 text-green-600" />
+                    {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
                   </button>
                 </div>
-              )}
-            </div>
-
-            {/* Order Summary */}
-            <div className="bg-white rounded-xl border border-border p-6 sticky top-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Order Summary</h3>
-
-              {/* Purchase Items */}
-              {hasPurchases && (
-                <div className="mb-6 pb-6 border-b border-border">
-                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <ShoppingCart className="w-4 h-4" />
-                    Purchase Items ({buyItems.length})
-                  </h4>
-                  <div className="space-y-3">
-                    {buyItems.map((item) => (
-                      <div key={`${item.id}_${item.type}`} className="flex gap-3">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          width={50}
-                          height={50}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {item.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Qty: {item.quantity} × ${item.price.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                {appliedCoupon && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+                    <Tag className="w-4 h-4" />
+                    <span>Coupon &quot;{appliedCoupon.code}&quot; applied</span>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Rental Items */}
-              {hasRentals && (
-                <div className="mb-6 pb-6 border-b border-border">
-                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Rental Items ({rentItems.length})
-                  </h4>
-                  <div className="space-y-3">
-                    {rentItems.map((item) => {
-                      const days = calculateRentalDays(item.id);
-                      return (
-                        <div key={`${item.id}_${item.type}`} className="flex gap-3">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            width={50}
-                            height={50}
-                            className="w-12 h-12 rounded-lg object-cover"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Qty: {item.quantity} × ${item.price.toFixed(2)}/day
-                            </p>
-                            {days > 0 && (
-                              <p className="text-xs text-primary font-medium">
-                                {days} {days === 1 ? "day" : "days"} rental
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Price Breakdown */}
-              <div className="space-y-3 mb-6">
+              {/* Totals */}
+              <div className="space-y-3 mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium text-foreground">${subtotal.toFixed(2)}</span>
                 </div>
-
-                {appliedCoupon && discount > 0 && (
+                {discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-green-600">Discount ({appliedCoupon.code})</span>
+                    <span className="text-muted-foreground">Discount</span>
                     <span className="font-medium text-green-600">-${discount.toFixed(2)}</span>
                   </div>
                 )}
-
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax (10%)</span>
                   <span className="font-medium text-foreground">${tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium text-green-600">Free</span>
+                  {shippingFee > 0 ? (
+                    <span className="font-medium text-foreground">${shippingFee.toFixed(2)}</span>
+                  ) : (
+                    <span className="font-medium text-green-600">Free</span>
+                  )}
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border">
-                <div className="flex justify-between mb-2">
-                  <span className="font-semibold text-foreground">Total</span>
-                  <span className="text-xl font-bold text-primary">${grandTotal.toFixed(2)}</span>
-                </div>
+              <div className="flex justify-between mb-4">
+                <span className="font-semibold text-foreground">Total</span>
+                <span className="text-xl font-bold text-primary">${grandTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
