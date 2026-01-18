@@ -3,7 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { loginAction } from "@/lib/actions/auth.actions";
 
@@ -23,14 +23,20 @@ function SubmitButton() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, formAction] = useFormState(loginAction, null);
+  const returnUrl = searchParams.get("returnUrl");
+  console.log("Return path: ", returnUrl);
+  const redirectTo =
+    typeof returnUrl === "string" && returnUrl.startsWith("/") ? returnUrl : "/";
+  console.log("Redirect to: ", redirectTo);
 
   // Redirect on successful login
   useEffect(() => {
     if (state?.success) {
-      router.push("/");
+      router.replace(redirectTo);
     }
-  }, [state?.success, router]);
+  }, [state?.success, router, redirectTo]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
