@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider     = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -21,10 +15,145 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  reviews Review[]
+  orders  Order[]
+
   @@map("users")
+}
+
+model Product {
+  id                String   @id @default(cuid())
+  name              String
+  shortDescription  String   @db.Text
+  longDescription   String   @db.Text
+  quantity          Int      @default(0)
+  rentalPrice       Float
+  purchasePrice     Float
+  rentalSalePrice   Float?
+  purchaseSalePrice Float?
+  image             String
+  additionalImages  Json     @default("[]")
+  features          Json     @default("[]")
+  specifications    Json     @default("{}")
+  category          String
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  reviews    Review[]
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model ProductAlias {
+  id              String  @id @default(cuid())
+  productID       String
+  relatedProductID String
+
+  product        Product @relation("PrimaryProductAliases", fields: [productID], references: [id], onDelete: Cascade)
+  relatedProduct Product @relation("RelatedProductAliases", fields: [relatedProductID], references: [id], onDelete: Cascade)
+
+  @@unique([productID, relatedProductID])
+  @@index([relatedProductID])
+  @@map("product_aliases")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userID    String
+  productID String
+  rating    Float
+  title     String
+  remarks   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userID], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productID], references: [id], onDelete: Cascade)
+
+  @@index([userID])
+  @@index([productID])
+  @@map("reviews")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userID      String
+  totalAmount Float
+  status      OrderStatus @default(PENDING)
+  type        OrderType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user         User          @relation(fields: [userID], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+  transactions Transaction[]
+
+  @@index([userID])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String    @id @default(cuid())
+  orderID   String
+  productID String
+  quantity  Int
+  price     Float
+  type      OrderType
+  createdAt DateTime  @default(now())
+
+  order   Order   @relation(fields: [orderID], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productID], references: [id], onDelete: Restrict)
+
+  @@index([orderID])
+  @@index([productID])
+  @@map("order_items")
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  orderID       String
+  amount        Float
+  status        TransactionStatus @default(PENDING)
+  paymentMethod PaymentMethod
+  paymentInfo   Json              @default("{}")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  order Order @relation(fields: [orderID], references: [id], onDelete: Cascade)
+
+  @@index([orderID])
+  @@map("transactions")
 }
 
 enum Role {
   CUSTOMER
   ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderType {
+  RENT
+  PURCHASE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CRYPTO
+  CARD
 }

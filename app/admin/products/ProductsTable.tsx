@@ -7,12 +7,18 @@ import { ProductFormModal } from "./ProductFormModal";
 interface Product {
   id: string;
   name: string;
-  description: string;
+  shortDescription: string;
+  longDescription: string;
   category: string;
-  rentPrice: number;
+  rentalPrice: number;
   purchasePrice: number;
-  stock: number;
-  imageUrl: string;
+  rentalSalePrice: number | null;
+  purchaseSalePrice: number | null;
+  quantity: number;
+  image: string;
+  additionalImages: string[];
+  features: string[];
+  specifications: Record<string, string>;
   createdAt: string;
 }
 
@@ -135,7 +141,7 @@ export function ProductsTable() {
                       {product.category}
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
-                      ${product.rentPrice.toFixed(2)}
+                      ${product.rentalPrice.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
                       ${product.purchasePrice.toFixed(2)}
@@ -143,14 +149,14 @@ export function ProductsTable() {
                     <td className="px-6 py-4 text-sm">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          product.stock > 10
+                          product.quantity > 10
                             ? "bg-green-100 text-green-700"
-                            : product.stock > 0
+                            : product.quantity > 0
                             ? "bg-yellow-100 text-yellow-700"
                             : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {product.stock}
+                        {product.quantity}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">

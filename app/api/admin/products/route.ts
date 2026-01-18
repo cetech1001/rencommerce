@@ -48,18 +48,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name,
-      description,
+      shortDescription,
+      longDescription,
       category,
-      rentPrice,
+      rentalPrice,
       purchasePrice,
-      stock,
-      imageUrl,
+      rentalSalePrice,
+      purchaseSalePrice,
+      quantity,
+      image,
+      additionalImages,
+      features,
+      specifications,
     } = body;
 
     // Validate required fields
-    if (!name || !description || !category || !imageUrl) {
+    if (!name || !shortDescription || !longDescription || !category || !image) {
       return NextResponse.json(
-        { error: "All fields are required" },
+        { error: "All required fields must be filled" },
         { status: 400 }
       );
     }
@@ -68,12 +74,18 @@ export async function POST(request: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name,
-        description,
+        shortDescription,
+        longDescription,
         category,
-        rentPrice: parseFloat(rentPrice),
+        rentalPrice: parseFloat(rentalPrice),
         purchasePrice: parseFloat(purchasePrice),
-        stock: parseInt(stock),
-        imageUrl,
+        rentalSalePrice: rentalSalePrice ? parseFloat(rentalSalePrice) : null,
+        purchaseSalePrice: purchaseSalePrice ? parseFloat(purchaseSalePrice) : null,
+        quantity: parseInt(quantity) || 0,
+        image,
+        additionalImages: additionalImages || [],
+        features: features || [],
+        specifications: specifications || {},
       },
     });
 

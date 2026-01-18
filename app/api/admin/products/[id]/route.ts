@@ -21,12 +21,18 @@ export async function PUT(
     const body = await request.json();
     const {
       name,
-      description,
+      shortDescription,
+      longDescription,
       category,
-      rentPrice,
+      rentalPrice,
       purchasePrice,
-      stock,
-      imageUrl,
+      rentalSalePrice,
+      purchaseSalePrice,
+      quantity,
+      image,
+      additionalImages,
+      features,
+      specifications,
     } = body;
 
     // Update product
@@ -34,14 +40,24 @@ export async function PUT(
       where: { id: params.id },
       data: {
         ...(name && { name }),
-        ...(description && { description }),
+        ...(shortDescription && { shortDescription }),
+        ...(longDescription && { longDescription }),
         ...(category && { category }),
-        ...(rentPrice !== undefined && { rentPrice: parseFloat(rentPrice) }),
+        ...(rentalPrice !== undefined && { rentalPrice: parseFloat(rentalPrice) }),
         ...(purchasePrice !== undefined && {
           purchasePrice: parseFloat(purchasePrice),
         }),
-        ...(stock !== undefined && { stock: parseInt(stock) }),
-        ...(imageUrl && { imageUrl }),
+        ...(rentalSalePrice !== undefined && {
+          rentalSalePrice: rentalSalePrice ? parseFloat(rentalSalePrice) : null
+        }),
+        ...(purchaseSalePrice !== undefined && {
+          purchaseSalePrice: purchaseSalePrice ? parseFloat(purchaseSalePrice) : null
+        }),
+        ...(quantity !== undefined && { quantity: parseInt(quantity) }),
+        ...(image && { image }),
+        ...(additionalImages && { additionalImages }),
+        ...(features && { features }),
+        ...(specifications && { specifications }),
       },
     });
 
