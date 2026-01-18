@@ -6,6 +6,7 @@ interface EditProductPageProps {
   };
 }
 
-export default function EditProductPage({ params }: EditProductPageProps) {
-  return <ProductForm productId={params.id} />;
+export default async function EditProductPage({ params }: EditProductPageProps) {
+  const id = (await params).id
+  return <ProductForm productID={id} />;
 }

@@ -11,10 +11,10 @@ import { ArrayInput } from "@/lib/components/admin/ArrayInput";
 import { KeyValueInput } from "@/lib/components/admin/KeyValueInput";
 
 interface ProductFormProps {
-  productId?: string;
+  productID?: string;
 }
 
-export function ProductForm({ productId }: ProductFormProps) {
+export function ProductForm({ productID }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -37,15 +37,15 @@ export function ProductForm({ productId }: ProductFormProps) {
   });
 
   useEffect(() => {
-    if (productId) {
+    if (productID) {
       fetchProduct();
     }
-  }, [productId]);
+  }, [productID]);
 
   const fetchProduct = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/products/${productId}`);
+      const response = await fetch(`/api/admin/products/${productID}`);
       const data = await response.json();
       if (data.product) {
         setFormData({
@@ -78,11 +78,11 @@ export function ProductForm({ productId }: ProductFormProps) {
     setError("");
 
     try {
-      const url = productId
-        ? `/api/admin/products/${productId}`
+      const url = productID
+        ? `/api/admin/products/${productID}`
         : "/api/admin/products";
 
-      const method = productId ? "PUT" : "POST";
+      const method = productID ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
@@ -125,10 +125,10 @@ export function ProductForm({ productId }: ProductFormProps) {
           Back to Products
         </Link>
         <h1 className="text-3xl font-bold text-foreground">
-          {productId ? "Edit Product" : "Create Product"}
+          {productID ? "Edit Product" : "Create Product"}
         </h1>
         <p className="text-muted-foreground mt-1">
-          {productId
+          {productID
             ? "Update product information and details"
             : "Add a new product to your catalog"}
         </p>
@@ -384,7 +384,7 @@ export function ProductForm({ productId }: ProductFormProps) {
             className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium flex items-center justify-center gap-2"
           >
             <Save className="w-5 h-5" />
-            {saving ? "Saving..." : productId ? "Update Product" : "Create Product"}
+            {saving ? "Saving..." : productID ? "Update Product" : "Create Product"}
           </button>
         </div>
       </form>

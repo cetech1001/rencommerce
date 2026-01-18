@@ -98,7 +98,7 @@ export function ProductsTable() {
                   Stock
                 </th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                  Created At
+                  Added On
                 </th>
                 <th className="text-right px-6 py-3 text-sm font-medium text-foreground">
                   Actions

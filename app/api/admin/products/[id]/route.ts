@@ -18,9 +18,11 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const id = (await params).id;
+
     // Fetch product
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!product) {
@@ -70,9 +72,11 @@ export async function PUT(
       specifications,
     } = body;
 
+    const id = (await params).id;
+
     // Update product
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name && { name }),
         ...(shortDescription && { shortDescription }),
@@ -122,9 +126,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const id = (await params).id;
+
     // Delete product
     await prisma.product.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
