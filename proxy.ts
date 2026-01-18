@@ -22,7 +22,7 @@ function matchesRoute(path: string, routes: string[]): boolean {
   });
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   // Get session token from cookie

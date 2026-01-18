@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Edit, Trash2, Plus } from "lucide-react";
-import { ProductFormModal } from "./ProductFormModal";
+import Link from "next/link";
 
 interface Product {
   id: string;
@@ -25,8 +25,6 @@ interface Product {
 export function ProductsTable() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -63,39 +61,22 @@ export function ProductsTable() {
     }
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setShowModal(true);
-  };
-
-  const handleCreate = () => {
-    setEditingProduct(null);
-    setShowModal(true);
-  };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    setEditingProduct(null);
-    fetchProducts();
-  };
-
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <>
-      <div className="bg-white rounded-lg border border-border">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold">All Products</h2>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Create Product
-          </button>
-        </div>
+    <div className="bg-white rounded-lg border border-border">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <h2 className="text-lg font-semibold">All Products</h2>
+        <Link
+          href="/admin/products/create"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Create Product
+        </Link>
+      </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -164,13 +145,13 @@ export function ProductsTable() {
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(product)}
+                        <Link
+                          href={`/admin/products/edit/${product.id}`}
                           className="p-2 hover:bg-muted rounded-lg transition-colors"
                           title="Edit product"
                         >
                           <Edit className="w-4 h-4 text-blue-600" />
-                        </button>
+                        </Link>
                         <button
                           onClick={() => handleDelete(product.id)}
                           className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -186,11 +167,6 @@ export function ProductsTable() {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {showModal && (
-        <ProductFormModal product={editingProduct} onClose={handleModalClose} />
-      )}
-    </>
+    </div>
   );
 }

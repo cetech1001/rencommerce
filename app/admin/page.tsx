@@ -1,4 +1,4 @@
-import { Users, Package, ShoppingCart, CreditCard, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, Package, ShoppingCart, CreditCard } from "lucide-react";
 
 export default function AdminDashboard() {
   const stats = [
