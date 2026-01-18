@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, AlertCircle } from "lucide-react";
 import { useCart } from "@/lib/contexts";
+import { ConfirmModal } from "@/lib/components/client";
 
 export default function Cart() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function Cart() {
   const [productStocks, setProductStocks] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [stockErrors, setStockErrors] = useState<string[]>([]);
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
 
   const rentItems = getRentItems();
   const buyItems = getBuyItems();
@@ -302,11 +304,7 @@ export default function Cart() {
 
             {/* Clear Cart */}
             <button
-              onClick={() => {
-                if (confirm("Are you sure you want to clear your cart?")) {
-                  clearCart();
-                }
-              }}
+              onClick={() => setShowClearCartModal(true)}
               className="w-full py-2 px-4 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
             >
               Clear Cart
@@ -314,6 +312,18 @@ export default function Cart() {
           </div>
         </div>
       </div>
+
+      {/* Clear Cart Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showClearCartModal}
+        onClose={() => setShowClearCartModal(false)}
+        onConfirm={clearCart}
+        title="Clear Shopping Cart?"
+        message="Are you sure you want to remove all items from your cart? This action cannot be undone."
+        confirmText="Clear Cart"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

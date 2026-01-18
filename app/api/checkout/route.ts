@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 interface CheckoutItem {
-  productId: string;
+  productID: string;
   quantity: number;
   type: "rent" | "purchase";
 }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     for (const item of items) {
       const product = await prisma.product.findUnique({
-        where: { id: item.productId },
+        where: { id: item.productID },
         select: {
           id: true,
           name: true,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!product) {
-        stockVerificationErrors.push(`Product not found: ${item.productId}`);
+        stockVerificationErrors.push(`Product not found: ${item.productID}`);
         continue;
       }
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
     // Create order (simplified - you would integrate with payment gateway here)
     // For now, we'll just create a placeholder order
-    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const orderID = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // In a real application, you would:
     // 1. Create payment intent with payment provider
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      orderId,
+      orderId: orderID,
       message: "Order created successfully",
     });
   } catch (error) {

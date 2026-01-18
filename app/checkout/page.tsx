@@ -24,7 +24,7 @@ interface AppliedCoupon {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getRentItems, getBuyItems, getTotalPrice, clearCart } = useCart();
+  const { items, getRentItems, getBuyItems, clearCart } = useCart();
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);

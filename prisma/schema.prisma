@@ -10,13 +10,15 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
+  phone     String?
   password  String
   role      Role     @default(CUSTOMER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reviews Review[]
-  orders  Order[]
+  reviews   Review[]
+  orders    Order[]
+  addresses Address[]
 
   @@map("users")
 }
@@ -61,6 +63,29 @@ model ProductAlias {
   @@map("product_aliases")
 }
 
+model Address {
+  id                String   @id @default(cuid())
+  userID            String
+  fullName          String
+  addressLine1      String
+  addressLine2      String?
+  city              String
+  state             String
+  postalCode        String
+  country           String
+  isDefaultBilling  Boolean  @default(false)
+  isDefaultShipping Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user           User    @relation(fields: [userID], references: [id], onDelete: Cascade)
+  billingOrders  Order[] @relation("BillingAddress")
+  shippingOrders Order[] @relation("ShippingAddress")
+
+  @@index([userID])
+  @@map("addresses")
+}
+
 model Review {
   id        String   @id @default(cuid())
   userID    String
@@ -80,19 +105,26 @@ model Review {
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  userID      String
-  totalAmount Float
-  status      OrderStatus @default(PENDING)
-  type        OrderType
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  userID            String
+  billingAddressID  String
+  shippingAddressID String
+  totalAmount       Float
+  shippingFee       Float       @default(0)
+  status            OrderStatus @default(PENDING)
+  type              OrderType
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  user         User          @relation(fields: [userID], references: [id], onDelete: Cascade)
-  orderItems   OrderItem[]
-  transactions Transaction[]
+  user            User          @relation(fields: [userID], references: [id], onDelete: Cascade)
+  billingAddress  Address       @relation("BillingAddress", fields: [billingAddressID], references: [id], onDelete: Restrict)
+  shippingAddress Address       @relation("ShippingAddress", fields: [shippingAddressID], references: [id], onDelete: Restrict)
+  orderItems      OrderItem[]
+  transactions    Transaction[]
 
   @@index([userID])
+  @@index([billingAddressID])
+  @@index([shippingAddressID])
   @@map("orders")
 }
 
@@ -132,17 +164,17 @@ model Transaction {
 }
 
 model Coupon {
-  id           String       @id @default(cuid())
-  code         String       @unique
-  discountType DiscountType
+  id            String       @id @default(cuid())
+  code          String       @unique
+  discountType  DiscountType
   discountValue Float
-  minPrice     Float?
-  maxPrice     Float?
-  scope        CouponScope
-  expiry       DateTime?
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  minPrice      Float?
+  maxPrice      Float?
+  scope         CouponScope
+  expiry        DateTime?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@map("coupons")
 }
