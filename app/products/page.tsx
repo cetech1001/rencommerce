@@ -166,6 +166,15 @@ export default function Products() {
     setPriceRange([0, 10000]);
   };
 
+  const getMode = ({ rentalPrice, purchasePrice }: Product) => {
+    if (rentalPrice > 0 && purchasePrice === 0) {
+      return "rental";
+    } else if (purchasePrice > 0 && rentalPrice === 0) {
+      return "purchase";
+    }
+    return undefined;
+  }
+
   const activeFiltersCount = selectedCategories.length;
 
   if (loading) {
@@ -288,6 +297,7 @@ export default function Products() {
                     <ProductCard
                       key={product.id}
                       id={product.id}
+                      quantity={product.quantity}
                       name={product.name}
                       description={product.shortDescription}
                       category={product.category}
@@ -296,8 +306,8 @@ export default function Products() {
                       rentalSalePrice={product.rentalSalePrice}
                       purchaseSalePrice={product.purchaseSalePrice}
                       image={product.image}
-                      inStock={product.quantity > 0}
                       viewMode={viewMode}
+                      mode={getMode(product)}
                     />
                   ))}
                 </div>

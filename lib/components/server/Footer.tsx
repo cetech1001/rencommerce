@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
+import { clientConfig } from "@/lib/config.client";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -20,10 +21,10 @@ export const Footer = () => {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </div>
-              <span className="text-xl font-bold">EnergyHub</span>
+              <span className="text-xl font-bold">{clientConfig.app.name}</span>
             </div>
             <p className="text-sm text-gray-300">
-              Sustainable energy equipment for a better tomorrow
+              Sustainable energy equipment for a better tomorrow.
             </p>
           </div>
 
@@ -46,11 +47,6 @@ export const Footer = () => {
                   All Products
                 </Link>
               </li>
-              <li>
-                <a href="#" className="hover:text-accent transition-colors">
-                  Blog
-                </a>
-              </li>
             </ul>
           </div>
 
@@ -59,22 +55,17 @@ export const Footer = () => {
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-gray-300">
               <li>
-                <a href="#" className="hover:text-accent transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-accent transition-colors">
+                <a href="/contact" className="hover:text-accent transition-colors">
                   Contact Us
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-accent transition-colors">
-                  FAQ
+                <a href="/faqs" className="hover:text-accent transition-colors">
+                  FAQs
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-accent transition-colors">
+                <a href="/terms" className="hover:text-accent transition-colors">
                   Terms & Privacy
                 </a>
               </li>
@@ -114,28 +105,8 @@ export const Footer = () => {
         {/* Social Links */}
         <div className="border-t border-gray-700 pt-8 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-gray-400 mb-4 md:mb-0">
-            © {currentYear} EnergyHub. All rights reserved.
+            © {currentYear} {clientConfig.app.name}. All rights reserved.
           </p>
-          <div className="flex items-center gap-4">
-            <a
-              href="#"
-              className="text-gray-300 hover:text-accent transition-colors"
-            >
-              <Linkedin className="w-5 h-5" />
-            </a>
-            <a
-              href="#"
-              className="text-gray-300 hover:text-accent transition-colors"
-            >
-              <Twitter className="w-5 h-5" />
-            </a>
-            <a
-              href="#"
-              className="text-gray-300 hover:text-accent transition-colors"
-            >
-              <Facebook className="w-5 h-5" />
-            </a>
-          </div>
         </div>
       </div>
     </footer>

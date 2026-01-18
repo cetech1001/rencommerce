@@ -108,7 +108,7 @@ export default async function RentPage() {
           {rentalProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {rentalProducts.map((product) => (
-                <ProductCard key={product.id} {...product} mode="rent" />
+                <ProductCard key={product.id} {...product} mode="rental" />
               ))}
             </div>
           ) : (
@@ -186,7 +186,7 @@ export default async function RentPage() {
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
             Start your renewable energy journey today with flexible rental
-            options
+            options.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -195,12 +195,6 @@ export default async function RentPage() {
             >
               Browse All Equipment
               <ArrowRight className="w-5 h-5 ml-2" />
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center px-8 py-3.5 rounded-lg border-2 border-white text-white font-semibold hover:bg-white/10 transition-all duration-200"
-            >
-              Learn More
             </Link>
           </div>
         </div>

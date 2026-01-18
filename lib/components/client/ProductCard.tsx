@@ -12,10 +12,11 @@ interface ProductCardProps {
   category: string;
   rentalPrice: number;
   purchasePrice: number;
+  quantity: number;
   rentalSalePrice: number | null;
   purchaseSalePrice: number | null;
-  inStock: boolean;
   viewMode?: "grid" | "list";
+  mode?: "rental" | "purchase";
 }
 
 export const ProductCard = ({
@@ -24,17 +25,20 @@ export const ProductCard = ({
   description,
   image,
   category,
+  quantity,
   rentalPrice,
   purchasePrice,
   rentalSalePrice,
   purchaseSalePrice,
-  inStock,
   viewMode = "grid",
+  mode,
 }: ProductCardProps) => {
   const hasRentalDiscount = !!(rentalSalePrice && rentalSalePrice < rentalPrice);
   const hasPurchaseDiscount = !!(purchaseSalePrice && purchaseSalePrice < purchasePrice);
   const displayRentalPrice = hasRentalDiscount ? rentalSalePrice : rentalPrice;
   const displayPurchasePrice = hasPurchaseDiscount ? purchaseSalePrice : purchasePrice;
+
+  const inStock = quantity > 0;
 
   if (viewMode === "list") {
     return (
@@ -179,57 +183,69 @@ export const ProductCard = ({
 
         {/* Prices */}
         <div className="mt-4 pt-4 border-t border-border space-y-2">
-          <div className="flex items-baseline justify-between">
-            <span className="text-xs text-muted-foreground">Rental/day</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-primary">
-                ${displayRentalPrice.toFixed(2)}
-              </span>
-              {hasRentalDiscount && (
-                <span className="text-xs text-muted-foreground line-through">
-                  ${rentalPrice.toFixed(2)}
+          {(!mode || mode === 'rental') ? (
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground">Rental/day</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-primary">
+                  ${displayRentalPrice.toFixed(2)}
                 </span>
-              )}
+                {hasRentalDiscount && (
+                  <span className="text-xs text-muted-foreground line-through">
+                    ${rentalPrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <></>
+          )}
 
-          <div className="flex items-baseline justify-between">
-            <span className="text-xs text-muted-foreground">Purchase</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-secondary">
-                ${displayPurchasePrice.toFixed(2)}
-              </span>
-              {hasPurchaseDiscount && (
-                <span className="text-xs text-muted-foreground line-through">
-                  ${purchasePrice.toFixed(2)}
+          {(!mode || mode === 'purchase') ? (
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground">Purchase</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-secondary">
+                  ${displayPurchasePrice.toFixed(2)}
                 </span>
-              )}
+                {hasPurchaseDiscount && (
+                  <span className="text-xs text-muted-foreground line-through">
+                    ${purchasePrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <></>
+          )}
         </div>
 
         {/* CTA Buttons */}
         <div className="flex gap-2 mt-4">
-          <Link
-            href={`/product/${id}?mode=rent`}
-            className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
-              inStock
-                ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
-          >
-            Rent
-          </Link>
-          <Link
-            href={`/product/${id}?mode=purchase`}
-            className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
-              inStock
-                ? "bg-secondary text-white hover:bg-secondary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
-          >
-            Buy
-          </Link>
+          {(!mode || mode === 'rental') ? (
+            <Link
+              href={`/product/${id}?mode=rent`}
+              className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
+                inStock
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              Rent
+            </Link>
+          ) : <></>}
+          {(!mode || mode === 'purchase') ? (
+            <Link
+              href={`/product/${id}?mode=purchase`}
+              className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
+                inStock
+                  ? "bg-secondary text-white hover:bg-secondary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              Buy
+            </Link>
+          ) : <></>}
         </div>
       </div>
     </div>
