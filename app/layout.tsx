@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { HeaderWrapper, Footer } from "@/lib/components/server";
-import { CartProvider } from "@/lib/contexts";
+import { CartProvider, ToastProvider } from "@/lib/contexts";
 import { config } from "@/lib/config";
 
 const geistSans = Geist({
@@ -30,11 +30,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CartProvider>
-          <HeaderWrapper />
-          {children}
-          <Footer />
-        </CartProvider>
+        <ToastProvider>
+          <CartProvider>
+            <HeaderWrapper />
+            {children}
+            <Footer />
+          </CartProvider>
+        </ToastProvider>
       </body>
     </html>
   );

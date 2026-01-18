@@ -18,7 +18,7 @@ import {
   Calendar,
   X,
 } from "lucide-react";
-import { useCart } from "@/lib/contexts";
+import { useCart, useToast } from "@/lib/contexts";
 
 interface Product {
   id: string;
@@ -56,6 +56,7 @@ export default function ProductDetail() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToCart } = useCart();
+  const { showToast } = useToast();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +78,19 @@ export default function ProductDetail() {
   useEffect(() => {
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (!product) return;
+
+    const canRentOption = product.rentalPrice > 0;
+    const canPurchaseOption = product.purchasePrice > 0;
+
+    if (mode === "rent" && !canRentOption && canPurchaseOption) {
+      setMode("purchase");
+    } else if (mode === "purchase" && !canPurchaseOption && canRentOption) {
+      setMode("rent");
+    }
+  }, [mode, product]);
 
   const fetchProduct = async () => {
     try {
@@ -138,14 +152,6 @@ export default function ProductDetail() {
 
   const allImages = [product.image, ...product.additionalImages];
 
-  // Automatically switch mode if current mode is not available
-  useEffect(() => {
-    if (mode === "rent" && !canRent && canPurchase) {
-      setMode("purchase");
-    } else if (mode === "purchase" && !canPurchase && canRent) {
-      setMode("rent");
-    }
-  }, [mode, canRent, canPurchase]);
 
   const handleAddToCart = () => {
     addToCart({
@@ -157,7 +163,10 @@ export default function ProductDetail() {
       quantity,
     });
 
-    alert(`${quantity}x ${product.name} added to your cart.`);
+    showToast(
+      `${quantity}x ${product.name} added to your cart.`,
+      "success"
+    );
   };
 
   const handleBuyNow = () => {

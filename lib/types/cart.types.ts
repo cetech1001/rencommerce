@@ -16,6 +16,8 @@ export interface CartItem {
   type: ProductType;
   image: string;
   quantity: number;
+  rentalStartDate?: string;
+  rentalEndDate?: string;
 }
 
 /**

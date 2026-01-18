@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, AlertCircle } from "lucide-react";
 import { useCart } from "@/lib/contexts";
 
 export default function Cart() {
+  const router = useRouter();
   const { items, removeFromCart, updateQuantity, getTotalPrice, getRentItems, getBuyItems, clearCart } =
     useCart();
 
   const [productStocks, setProductStocks] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [stockErrors, setStockErrors] = useState<string[]>([]);
 
   const rentItems = getRentItems();
   const buyItems = getBuyItems();
@@ -47,6 +50,33 @@ export default function Cart() {
       setLoading(false);
     }
   }, [items.length]);
+
+  // Validate stock before allowing checkout
+  const validateStock = () => {
+    const errors: string[] = [];
+
+    items.forEach((item) => {
+      const availableStock = productStocks[item.id] || 0;
+
+      if (availableStock === 0) {
+        errors.push(`${item.name} is out of stock`);
+      } else if (item.quantity > availableStock) {
+        errors.push(
+          `${item.name}: Only ${availableStock} available (you have ${item.quantity} in cart)`
+        );
+      }
+    });
+
+    setStockErrors(errors);
+    return errors.length === 0;
+  };
+
+  // Validate stock whenever stocks or items change
+  useEffect(() => {
+    if (!loading && Object.keys(productStocks).length > 0) {
+      validateStock();
+    }
+  }, [productStocks, items, loading]);
 
   if (items.length === 0) {
     return (
@@ -231,12 +261,36 @@ export default function Cart() {
               </div>
 
               <div className="space-y-3">
-                <Link
-                  href="/checkout"
-                  className="w-full py-3 px-4 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200 text-center block"
+                {/* Stock Errors */}
+                {stockErrors.length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-red-900 mb-1">
+                          Cannot proceed to checkout:
+                        </p>
+                        <ul className="text-xs text-red-700 space-y-1">
+                          {stockErrors.map((error, idx) => (
+                            <li key={idx}>• {error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    if (validateStock()) {
+                      router.push("/checkout");
+                    }
+                  }}
+                  disabled={stockErrors.length > 0}
+                  className="w-full py-3 px-4 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200 text-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
                 >
                   Proceed to Checkout
-                </Link>
+                </button>
 
                 {buyItems.length > 0 && rentItems.length > 0 && (
                   <div className="text-xs text-muted-foreground text-center pt-2">
