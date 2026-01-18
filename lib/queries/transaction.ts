@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/actions/auth";
 
 export async function getAllTransactions() {

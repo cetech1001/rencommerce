@@ -2,7 +2,7 @@ import { ArrowRight, Zap, Calendar } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/lib/components/client";
 import { rentalBenefits } from "@/lib/data";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 
 export default async function RentPage() {
   // Fetch rental products from database

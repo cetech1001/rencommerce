@@ -1,11 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-
-interface ValidateCouponData {
-  code: string;
-  cartTotal: number;
-}
+import { prisma } from "@/lib/db";
+import type { ValidateCouponData } from "@/lib/types";
 
 export async function validateCoupon(data: ValidateCouponData) {
   try {

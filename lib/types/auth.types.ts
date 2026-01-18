@@ -1,12 +1,10 @@
-/**
- * Authentication Types
- * Types related to user authentication and authorization
- */
+export interface RegisterData {
+  email: string;
+  name: string;
+  phone?: string;
+  password: string;
+}
 
-/**
- * User data returned from authentication actions
- * Password is never included in this type
- */
 export type AuthUser = {
   id: string;
   email: string;
@@ -14,9 +12,6 @@ export type AuthUser = {
   role: string;
 };
 
-/**
- * Login credentials
- */
 export type LoginCredentials = {
   email: string;
   password: string;

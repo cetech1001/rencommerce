@@ -1,13 +1,8 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-
-interface PaymentData {
-  orderID: string;
-  paymentMethod: "CARD" | "BANK_TRANSFER" | "CRYPTO";
-  paymentInfo: Record<string, any>;
-}
+import type { PaymentData } from "@/lib/types";
 
 export async function processPayment(data: PaymentData) {
   try {

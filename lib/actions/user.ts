@@ -1,16 +1,10 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "./auth";
-
-interface CreateUserData {
-  name: string;
-  email: string;
-  password: string;
-  role?: "CUSTOMER" | "ADMIN";
-}
+import type { CreateUserData, UpdateUserData } from "@/lib/types";
 
 export async function createUser(data: CreateUserData) {
   await requireAdmin();
@@ -52,13 +46,6 @@ export async function createUser(data: CreateUserData) {
     console.error("Error creating user:", error);
     return { success: false, error: "Failed to create user" };
   }
-}
-
-interface UpdateUserData {
-  id: string;
-  name?: string;
-  email?: string;
-  role?: "CUSTOMER" | "ADMIN";
 }
 
 export async function updateUser(data: UpdateUserData) {

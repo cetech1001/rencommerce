@@ -5,7 +5,7 @@ import { Eye } from "lucide-react";
 
 interface Order {
   id: string;
-  userId: string;
+  userID: string;
   userName: string;
   totalAmount: number;
   status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
@@ -65,10 +65,10 @@ export function OrdersTable() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">All Orders</h2>
           <div className="flex gap-2">
-            {["ALL", "PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((status) => (
+            {(["ALL", "PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const).map((status) => (
               <button
                 key={status}
-                onClick={() => setFilter(status as any)}
+                onClick={() => setFilter(status)}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   filter === status
                     ? "bg-primary text-white"

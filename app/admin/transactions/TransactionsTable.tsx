@@ -63,10 +63,10 @@ export function TransactionsTable() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">All Transactions</h2>
           <div className="flex gap-2">
-            {["ALL", "PENDING", "COMPLETED", "FAILED", "REFUNDED"].map((status) => (
+            {(["ALL", "PENDING", "COMPLETED", "FAILED", "REFUNDED"] as const).map((status) => (
               <button
                 key={status}
-                onClick={() => setFilter(status as any)}
+                onClick={() => setFilter(status)}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   filter === status
                     ? "bg-primary text-white"

@@ -9,7 +9,7 @@ interface User {
   name: string;
   email: string;
   role: "CUSTOMER" | "ADMIN";
-  createdAt: string;
+  createdAt: Date;
 }
 
 export function UsersTable() {

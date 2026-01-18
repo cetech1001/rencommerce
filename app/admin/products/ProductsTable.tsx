@@ -16,10 +16,10 @@ interface Product {
   purchaseSalePrice: number | null;
   quantity: number;
   image: string;
-  additionalImages: string[];
-  features: string[];
-  specifications: Record<string, string>;
-  createdAt: string;
+  // additionalImages: string[] | null;
+  // features: string[];
+  // specifications: Record<string, string>;
+  createdAt: Date;
 }
 
 export function ProductsTable() {

@@ -1,10 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { getAuthSession } from "@/lib/actions/auth";
 import { requireAdmin } from "@/lib/actions/auth";
 
-// Admin-only query
 export async function getAllOrders() {
   await requireAdmin();
 
@@ -23,10 +22,9 @@ export async function getAllOrders() {
       },
     });
 
-    // Transform data to match the frontend interface
     return orders.map((order) => ({
       id: order.id,
-      userId: order.userID,
+      userID: order.userID,
       userName: order.user.name,
       totalAmount: order.totalAmount,
       status: order.status,

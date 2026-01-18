@@ -1,43 +1,8 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { register, getAuthSession } from "./auth";
-
-interface CheckoutItem {
-  productID: string;
-  quantity: number;
-  price: number;
-  type: "RENT" | "PURCHASE";
-  rentalStartDate?: string | null;
-  rentalEndDate?: string | null;
-}
-
-interface AddressData {
-  fullName: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-}
-
-interface CheckoutData {
-  items: CheckoutItem[];
-  billingAddress: AddressData;
-  shippingAddress: AddressData;
-  sameAsBilling: boolean;
-  totalAmount: number;
-  shippingFee: number;
-  couponCode?: string;
-  // Account creation (if not authenticated)
-  accountData?: {
-    email: string;
-    name: string;
-    phone?: string;
-    password: string;
-  };
-}
+import type { CheckoutData } from "@/lib/types";
 
 export async function createOrder(data: CheckoutData) {
   try {

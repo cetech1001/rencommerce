@@ -42,5 +42,5 @@ next-env.d.ts
 
 sample
 
-/lib/generated/prisma
+lib/prisma
 public/uploads

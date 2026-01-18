@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { loginAction } from "@/lib/actions/auth.actions";
+import { login } from "@/lib/actions/auth";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -24,12 +24,10 @@ function SubmitButton() {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [state, formAction] = useFormState(loginAction, null);
+  const [state, formAction] = useFormState(login, null);
   const returnUrl = searchParams.get("returnUrl");
-  console.log("Return path: ", returnUrl);
   const redirectTo =
     typeof returnUrl === "string" && returnUrl.startsWith("/") ? returnUrl : "/";
-  console.log("Redirect to: ", redirectTo);
 
   // Redirect on successful login
   useEffect(() => {

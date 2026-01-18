@@ -1,7 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/actions/auth";
+import type { ProductQueryOptions } from "@/lib/types";
+import { ProductOrderByWithAggregationInput, ProductWhereInput } from "../prisma/models";
 
 // Admin-only query to get all products
 export async function getAllProducts() {
@@ -27,6 +29,18 @@ export async function getProductByIDAdmin(productID: string) {
   try {
     const product = await prisma.product.findUnique({
       where: { id: productID },
+      select: {
+        id: true,
+        name: true,
+        shortDescription: true,
+        category: true,
+        rentalPrice: true,
+        purchasePrice: true,
+        rentalSalePrice: true,
+        purchaseSalePrice: true,
+        image: true,
+        quantity: true,
+      }
     });
 
     return product;
@@ -37,14 +51,7 @@ export async function getProductByIDAdmin(productID: string) {
 }
 
 // Public queries
-export async function getProducts(options?: {
-  category?: string;
-  isActive?: boolean;
-  hasRentalPrice?: boolean;
-  hasPurchasePrice?: boolean;
-  limit?: number;
-  orderBy?: "price" | "name" | "createdAt";
-}) {
+export async function getProducts(options?: ProductQueryOptions) {
   const {
     category,
     isActive = true,
@@ -54,7 +61,7 @@ export async function getProducts(options?: {
     orderBy = "createdAt",
   } = options || {};
 
-  const where: any = { isActive, quantity: { gt: 0 } };
+  const where: ProductWhereInput = { isActive, quantity: { gt: 0 } };
 
   if (category) where.category = category;
   if (hasRentalPrice !== undefined) {
@@ -64,7 +71,7 @@ export async function getProducts(options?: {
     where.purchasePrice = hasPurchasePrice ? { gt: 0 } : { equals: 0 };
   }
 
-  const orderByClause: any =
+  const orderByClause: ProductOrderByWithAggregationInput =
     orderBy === "price"
       ? { purchasePrice: "asc" }
       : orderBy === "name"
@@ -133,9 +140,9 @@ export async function searchProducts(query: string) {
       isActive: true,
       quantity: { gt: 0 },
       OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { shortDescription: { contains: query, mode: "insensitive" } },
-        { longDescription: { contains: query, mode: "insensitive" } },
+        { name: { search: query } },
+        { shortDescription: { search: query } },
+        { longDescription: { search: query } },
       ],
     },
     select: {

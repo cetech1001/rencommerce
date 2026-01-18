@@ -2,7 +2,7 @@ import { ArrowRight, TrendingUp, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/lib/components/client";
 import { buyingGuide, purchaseBenefits } from "@/lib/data";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 
 export default async function PurchasePage() {
   const purchaseProducts = await prisma.product.findMany({

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { ArrowRight, Check, Zap, Sun } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { howItWorks, testimonials } from "@/lib/data";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 
 export default async function Home() {
   // Fetch featured products from database

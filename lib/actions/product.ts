@@ -1,24 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "./auth";
-
-interface CreateProductData {
-  name: string;
-  shortDescription: string;
-  longDescription: string;
-  category: string;
-  rentalPrice: number;
-  purchasePrice: number;
-  rentalSalePrice?: number | null;
-  purchaseSalePrice?: number | null;
-  quantity: number;
-  image: string;
-  additionalImages?: string[];
-  features?: string[];
-  specifications?: Record<string, string>;
-}
+import type { CreateProductData, UpdateProductData } from "@/lib/types";
 
 export async function createProduct(data: CreateProductData) {
   await requireAdmin();
@@ -50,23 +35,6 @@ export async function createProduct(data: CreateProductData) {
     console.error("Error creating product:", error);
     return { success: false, error: "Failed to create product" };
   }
-}
-
-interface UpdateProductData {
-  id: string;
-  name?: string;
-  shortDescription?: string;
-  longDescription?: string;
-  category?: string;
-  rentalPrice?: number;
-  purchasePrice?: number;
-  rentalSalePrice?: number | null;
-  purchaseSalePrice?: number | null;
-  quantity?: number;
-  image?: string;
-  additionalImages?: string[];
-  features?: string[];
-  specifications?: Record<string, string>;
 }
 
 export async function updateProduct(data: UpdateProductData) {

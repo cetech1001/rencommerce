@@ -1,21 +1,10 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createSession, deleteSessionCookie, getCurrentUser } from "@/lib/session";
 import { redirect } from "next/navigation";
-
-interface RegisterData {
-  email: string;
-  name: string;
-  phone?: string;
-  password: string;
-}
-
-interface LoginData {
-  email: string;
-  password: string;
-}
+import type { ActionResponse, AuthUser, LoginCredentials, RegisterData } from "@/lib/types";
 
 export async function register(data: RegisterData) {
   try {
@@ -72,7 +61,21 @@ export async function register(data: RegisterData) {
   }
 }
 
-export async function login(data: LoginData) {
+const invalidCredentialsResponse = (): ActionResponse<{
+  user: AuthUser;
+}> => {
+  const message = "Invalid email or password";
+  return {
+    success: false,
+    message,
+    errors: {
+      email: [message],
+      password: [message],
+    },
+  };
+};
+
+export async function login(data: LoginCredentials) {
   try {
     const { email, password } = data;
 
@@ -82,14 +85,14 @@ export async function login(data: LoginData) {
     });
 
     if (!user) {
-      return { success: false, error: "Invalid email or password" };
+      return invalidCredentialsResponse();
     }
 
     // Verify password
     const isValid = await verifyPassword(password, user.password);
 
     if (!isValid) {
-      return { success: false, error: "Invalid email or password" };
+      return invalidCredentialsResponse();
     }
 
     // Create session
@@ -106,17 +109,18 @@ export async function login(data: LoginData) {
 
     return {
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
       },
     };
   } catch (error) {
     console.error("Login error:", error);
-    return { success: false, error: "Failed to login" };
+    return { success: false, message: "Failed to login" };
   }
 }
 

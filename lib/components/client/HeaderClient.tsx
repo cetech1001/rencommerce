@@ -5,7 +5,7 @@ import { Menu, X, ShoppingCart, User, LogOut, LayoutDashboard, Package } from "l
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/lib/contexts/CartContext";
-import { logoutAction } from "@/lib/actions/auth.actions";
+import { logout } from "@/lib/actions/auth";
 import type { SessionUser } from "@/lib/types";
 import { clientConfig } from "../../config.client";
 
@@ -43,7 +43,7 @@ export function HeaderClient({ user }: HeaderClientProps) {
   }, []);
 
   const handleLogout = async () => {
-    await logoutAction();
+    await logout();
     setShowUserMenu(false);
     router.push("/");
     router.refresh();
