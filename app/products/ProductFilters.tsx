@@ -14,8 +14,8 @@ interface ProductFiltersProps {
   onCategoriesChange: (categories: string[]) => void;
   priceRange: [number, number];
   onPriceRangeChange: (range: [number, number]) => void;
-  priceType: "rental" | "purchase";
-  onPriceTypeChange: (type: "rental" | "purchase") => void;
+  productType: "rental" | "purchase" | "all";
+  onProductTypeChange: (type: "rental" | "purchase" | "all") => void;
   onClearAll: () => void;
   maxPrice: number;
 }
@@ -26,8 +26,8 @@ export function ProductFilters({
   onCategoriesChange,
   priceRange,
   onPriceRangeChange,
-  priceType,
-  onPriceTypeChange,
+  productType,
+  onProductTypeChange,
   onClearAll,
   maxPrice,
 }: ProductFiltersProps) {
@@ -67,10 +67,49 @@ export function ProductFilters({
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Categories Filter */}
+        {/* Type Filter */}
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">
-            Categories
+            Type
+          </h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onProductTypeChange("rental")}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                productType === "rental"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              Rental
+            </button>
+            <button
+              onClick={() => onProductTypeChange("purchase")}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                productType === "purchase"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              Purchase
+            </button>
+            <button
+              onClick={() => onProductTypeChange("all")}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                productType === "all"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              All
+            </button>
+          </div>
+        </div>
+
+        {/* Categories Filter */}
+        <div className="pt-6 border-t border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-3">
+            Category
             {selectedCategories.length > 0 && (
               <span className="ml-2 text-xs font-normal text-muted-foreground">
                 ({selectedCategories.length} selected)
@@ -121,35 +160,6 @@ export function ProductFilters({
             ) : (
               <p className="text-sm text-muted-foreground">No categories available</p>
             )}
-          </div>
-        </div>
-
-        {/* Price Type Filter */}
-        <div className="pt-6 border-t border-border">
-          <h3 className="text-sm font-semibold text-foreground mb-3">
-            Price Type
-          </h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onPriceTypeChange("rental")}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                priceType === "rental"
-                  ? "bg-primary text-white"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              Rental
-            </button>
-            <button
-              onClick={() => onPriceTypeChange("purchase")}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                priceType === "purchase"
-                  ? "bg-primary text-white"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              Purchase
-            </button>
           </div>
         </div>
 

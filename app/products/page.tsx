@@ -37,28 +37,53 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [productType, setProductType] = useState<"rental" | "purchase" | "all">("all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
-  const [priceType, setPriceType] = useState<"rental" | "purchase">("rental");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const itemsPerPage = 12;
 
-  // Fetch products and filters
+  // Fetch products and filters on mount
   useEffect(() => {
     Promise.all([fetchProducts(), fetchFilters()]);
   }, []);
 
-  // Fetch filters when relevant filter params change
+  // Fetch filters when type changes (affects categories and price range)
   useEffect(() => {
-    fetchFilters();
-  }, [selectedCategories, priceType]);
+    if (products.length > 0) {
+      fetchFilters();
+      setSelectedCategories([]); // Clear categories when type changes
+    }
+  }, [productType]);
+
+  // Fetch filters when categories change (affects price range only)
+  useEffect(() => {
+    if (products.length > 0 && selectedCategories.length > 0) {
+      fetchFilters();
+    }
+  }, [selectedCategories]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/products");
+      const params = new URLSearchParams();
+      if (productType !== "all") {
+        params.set("type", productType);
+      }
+      if (selectedCategories.length > 0) {
+        params.set("categories", selectedCategories.join(","));
+      }
+      if (priceRange[0] > 0 || priceRange[1] < 10000) {
+        params.set("minPrice", priceRange[0].toString());
+        params.set("maxPrice", priceRange[1].toString());
+      }
+
+      const queryString = params.toString();
+      const url = queryString ? `/api/products?${queryString}` : "/api/products";
+
+      const response = await fetch(url);
       const data = await response.json();
       setProducts(data.products || []);
     } catch (error) {
@@ -71,10 +96,12 @@ export default function Products() {
   const fetchFilters = async () => {
     try {
       const params = new URLSearchParams();
+      if (productType !== "all") {
+        params.set("type", productType);
+      }
       if (selectedCategories.length > 0) {
         params.set("categories", selectedCategories.join(","));
       }
-      params.set("priceType", priceType);
 
       const response = await fetch(`/api/products/filters?${params.toString()}`);
       const data = await response.json();
@@ -90,25 +117,9 @@ export default function Products() {
     }
   };
 
-  // Filter and sort products
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products;
-
-    // Category filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((product) =>
-        selectedCategories.includes(product.category)
-      );
-    }
-
-    // Price range filter
-    filtered = filtered.filter((product) => {
-      const price = priceType === "rental" ? product.rentalPrice : product.purchasePrice;
-      return price >= priceRange[0] && price <= priceRange[1];
-    });
-
-    // Sort products
-    const sorted = [...filtered];
+  // Sort products (filtering happens server-side)
+  const sortedProducts = useMemo(() => {
+    const sorted = [...products];
     switch (sortBy) {
       case "name-asc":
         return sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -126,25 +137,33 @@ export default function Products() {
       default:
         return sorted;
     }
-  }, [products, selectedCategories, priceRange, priceType, sortBy]);
+  }, [products, sortBy]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = filteredAndSortedProducts.slice(
+  const paginatedProducts = sortedProducts.slice(
     startIndex,
     startIndex + itemsPerPage
   );
 
-  // Reset to page 1 when filters change
+  // Refetch products when filters change
+  useEffect(() => {
+    if (products.length > 0) {
+      setCurrentPage(1);
+      fetchProducts();
+    }
+  }, [productType, selectedCategories, priceRange]);
+
+  // Reset to page 1 when sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategories, priceRange, sortBy]);
+  }, [sortBy]);
 
   const handleClearFilters = () => {
+    setProductType("all");
     setSelectedCategories([]);
-    setPriceType("rental");
-    // Price range will be updated automatically by the useEffect that watches selectedCategories and priceType
+    setPriceRange([0, 10000]);
   };
 
   const activeFiltersCount = selectedCategories.length;
@@ -184,8 +203,8 @@ export default function Products() {
               onCategoriesChange={setSelectedCategories}
               priceRange={priceRange}
               onPriceRangeChange={setPriceRange}
-              priceType={priceType}
-              onPriceTypeChange={setPriceType}
+              productType={productType}
+              onProductTypeChange={setProductType}
               onClearAll={handleClearFilters}
               maxPrice={priceRange[1]}
             />
@@ -197,7 +216,7 @@ export default function Products() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="text-sm text-muted-foreground">
-                  {filteredAndSortedProducts.length} product{filteredAndSortedProducts.length !== 1 ? 's' : ''}
+                  {sortedProducts.length} product{sortedProducts.length !== 1 ? 's' : ''}
                 </div>
                 {activeFiltersCount > 0 && (
                   <button
