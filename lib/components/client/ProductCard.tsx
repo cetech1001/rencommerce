@@ -31,8 +31,8 @@ export const ProductCard = ({
   inStock,
   viewMode = "grid",
 }: ProductCardProps) => {
-  const hasRentalDiscount = rentalSalePrice && rentalSalePrice < rentalPrice;
-  const hasPurchaseDiscount = purchaseSalePrice && purchaseSalePrice < purchasePrice;
+  const hasRentalDiscount = !!(rentalSalePrice && rentalSalePrice < rentalPrice);
+  const hasPurchaseDiscount = !!(purchaseSalePrice && purchaseSalePrice < purchasePrice);
   const displayRentalPrice = hasRentalDiscount ? rentalSalePrice : rentalPrice;
   const displayPurchasePrice = hasPurchaseDiscount ? purchaseSalePrice : purchasePrice;
 
@@ -80,14 +80,15 @@ export const ProductCard = ({
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl font-bold text-primary">
                       ${displayRentalPrice.toFixed(2)}
+                      <span className="text-xs text-muted-foreground">/day</span>
                     </span>
+                    <br/>
                     {hasRentalDiscount && (
                       <span className="text-sm text-muted-foreground line-through">
                         ${rentalPrice.toFixed(2)}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">/day</span>
                 </div>
 
                 <div>

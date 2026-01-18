@@ -46,22 +46,21 @@ export default function Products() {
 
   const itemsPerPage = 12;
 
-  // Fetch products and categories
+  // Fetch products and filters
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories()]);
+    Promise.all([fetchProducts(), fetchFilters()]);
   }, []);
+
+  // Fetch filters when relevant filter params change
+  useEffect(() => {
+    fetchFilters();
+  }, [selectedCategories, priceType]);
 
   const fetchProducts = async () => {
     try {
       const response = await fetch("/api/products");
       const data = await response.json();
       setProducts(data.products || []);
-
-      // Set initial price range based on products
-      if (data.products && data.products.length > 0) {
-        const prices = data.products.map((p: Product) => p.rentalPrice);
-        setPriceRange([0, Math.max(...prices)]);
-      }
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
@@ -69,13 +68,25 @@ export default function Products() {
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchFilters = async () => {
     try {
-      const response = await fetch("/api/products/categories");
+      const params = new URLSearchParams();
+      if (selectedCategories.length > 0) {
+        params.set("categories", selectedCategories.join(","));
+      }
+      params.set("priceType", priceType);
+
+      const response = await fetch(`/api/products/filters?${params.toString()}`);
       const data = await response.json();
+
       setCategories(data.categories || []);
+
+      // Update price range based on filtered results
+      if (data.priceRange) {
+        setPriceRange([data.priceRange.min, data.priceRange.max]);
+      }
     } catch (error) {
-      console.error("Failed to fetch categories:", error);
+      console.error("Failed to fetch filters:", error);
     }
   };
 
@@ -132,9 +143,8 @@ export default function Products() {
 
   const handleClearFilters = () => {
     setSelectedCategories([]);
-    const prices = products.map((p) => p.rentalPrice);
-    setPriceRange([0, Math.max(...prices)]);
     setPriceType("rental");
+    // Price range will be updated automatically by the useEffect that watches selectedCategories and priceType
   };
 
   const activeFiltersCount = selectedCategories.length;
@@ -177,9 +187,7 @@ export default function Products() {
               priceType={priceType}
               onPriceTypeChange={setPriceType}
               onClearAll={handleClearFilters}
-              maxPrice={Math.max(...products.map((p) =>
-                priceType === "rental" ? p.rentalPrice : p.purchasePrice
-              ))}
+              maxPrice={priceRange[1]}
             />
           </div>
 
@@ -220,7 +228,7 @@ export default function Products() {
                 </div>
 
                 {/* View Mode Toggle */}
-                <div className="flex gap-2 bg-white border border-border rounded-lg p-1">
+                <div className="hidden sm:flex gap-2 bg-white border border-border rounded-lg p-1">
                   <button
                     onClick={() => setViewMode("grid")}
                     className={`p-2 rounded transition-all duration-200 ${
