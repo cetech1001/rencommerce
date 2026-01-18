@@ -1,6 +1,6 @@
 'use client';
 
-import { Star, Zap } from "lucide-react";
+import { ShoppingCart, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -9,13 +9,13 @@ interface ProductCardProps {
   name: string;
   description: string;
   image: string;
-  rating: number;
-  reviews: number;
-  type: "rent" | "buy";
-  price: number;
-  originalPrice?: number;
-  badge?: string;
-  specs?: string[];
+  category: string;
+  rentalPrice: number;
+  purchasePrice: number;
+  rentalSalePrice: number | null;
+  purchaseSalePrice: number | null;
+  inStock: boolean;
+  viewMode?: "grid" | "list";
 }
 
 export const ProductCard = ({
@@ -23,104 +23,213 @@ export const ProductCard = ({
   name,
   description,
   image,
-  rating,
-  reviews,
-  type,
-  price,
-  originalPrice,
-  badge,
-  specs = [],
+  category,
+  rentalPrice,
+  purchasePrice,
+  rentalSalePrice,
+  purchaseSalePrice,
+  inStock,
+  viewMode = "grid",
 }: ProductCardProps) => {
-  const isOnSale = originalPrice && originalPrice > price;
+  const hasRentalDiscount = rentalSalePrice && rentalSalePrice < rentalPrice;
+  const hasPurchaseDiscount = purchaseSalePrice && purchaseSalePrice < purchasePrice;
+  const displayRentalPrice = hasRentalDiscount ? rentalSalePrice : rentalPrice;
+  const displayPurchasePrice = hasPurchaseDiscount ? purchaseSalePrice : purchasePrice;
+
+  if (viewMode === "list") {
+    return (
+      <div className="group flex gap-4 bg-white rounded-xl border border-border hover:border-primary transition-all duration-300 p-4 hover:shadow-lg">
+        {/* Image */}
+        <Link href={`/product/${id}`} className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/50 w-32 h-32 flex-shrink-0 rounded-lg">
+          <Image
+            src={image}
+            alt={name}
+            width={128}
+            height={128}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          {!inStock && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <span className="text-white text-xs font-semibold">Out of Stock</span>
+            </div>
+          )}
+        </Link>
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <Link href={`/product/${id}`} className="hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-foreground text-lg mb-1">
+                    {name}
+                  </h3>
+                </Link>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {description}
+                </p>
+                <span className="inline-block px-2 py-1 bg-muted text-xs font-medium rounded">
+                  {category}
+                </span>
+              </div>
+
+              {/* Prices */}
+              <div className="text-right">
+                <div className="mb-3">
+                  <div className="text-xs text-muted-foreground mb-1">Rental</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-primary">
+                      ${displayRentalPrice.toFixed(2)}
+                    </span>
+                    {hasRentalDiscount && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        ${rentalPrice.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">/day</span>
+                </div>
+
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Purchase</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-secondary">
+                      ${displayPurchasePrice.toFixed(2)}
+                    </span>
+                    {hasPurchaseDiscount && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        ${purchasePrice.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 mt-4">
+            <Link
+              href={`/product/${id}?mode=rent`}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 text-center text-sm flex items-center justify-center gap-2 ${
+                inStock
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              Rent
+            </Link>
+            <Link
+              href={`/product/${id}?mode=purchase`}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 text-center text-sm flex items-center justify-center gap-2 ${
+                inStock
+                  ? "bg-secondary text-white hover:bg-secondary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Buy
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group flex flex-col h-full bg-white rounded-xl border border-border hover:border-primary transition-all duration-300 overflow-hidden hover:shadow-lg">
-      {/* Image Container - Clickable Link to Detail */}
-      <Link href={`/product/${id}`} className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/50 h-48 sm:h-56 block">
+      {/* Image Container */}
+      <Link href={`/product/${id}`} className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/50 h-48 block">
         <Image
           src={image}
           alt={name}
-          width={500}
-          height={500}
+          width={400}
+          height={300}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        {badge && (
-          <div className="absolute top-3 right-3 px-3 py-1 bg-accent text-accent-foreground text-xs font-semibold rounded-full">
-            {badge}
+        {!inStock && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className="text-white text-sm font-semibold">Out of Stock</span>
           </div>
         )}
-        {type === "rent" && (
-          <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full flex items-center gap-1">
-            <Zap className="w-3 h-3" />
-            Rental
+        {(hasRentalDiscount || hasPurchaseDiscount) && (
+          <div className="absolute top-3 right-3 px-3 py-1 bg-accent text-white text-xs font-semibold rounded-full">
+            Sale
           </div>
         )}
       </Link>
 
       {/* Content */}
-      <div className="flex-grow p-4 sm:p-5 flex flex-col">
-        {/* Title and Description */}
-        <Link href={`/product/${id}`} className="hover:text-primary transition-colors">
-          <h3 className="font-semibold text-foreground text-base sm:text-lg mb-1 line-clamp-2">
-            {name}
-          </h3>
-        </Link>
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-          {description}
-        </p>
-
-        {/* Specs */}
-        {specs.length > 0 && (
-          <div className="mb-4 space-y-1">
-            {specs.slice(0, 2).map((spec, idx) => (
-              <p key={idx} className="text-xs text-muted-foreground">
-                ✓ {spec}
-              </p>
-            ))}
-          </div>
-        )}
-
-        {/* Rating */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-3.5 h-3.5 ${
-                  i < Math.floor(rating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-muted-foreground"
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-muted-foreground">({reviews})</span>
+      <div className="flex-grow p-4 flex flex-col">
+        <div className="flex-1">
+          <Link href={`/product/${id}`} className="hover:text-primary transition-colors">
+            <h3 className="font-semibold text-foreground text-base mb-1 line-clamp-2">
+              {name}
+            </h3>
+          </Link>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+            {description}
+          </p>
+          <span className="inline-block px-2 py-1 bg-muted text-xs font-medium rounded">
+            {category}
+          </span>
         </div>
 
-        {/* Price */}
-        <div className="mt-auto pt-4 border-t border-border mb-4">
-          <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-2xl font-bold text-primary">${price}</span>
-            {isOnSale && (
-              <span className="text-sm text-muted-foreground line-through">
-                ${originalPrice}
+        {/* Prices */}
+        <div className="mt-4 pt-4 border-t border-border space-y-2">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-muted-foreground">Rental/day</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-primary">
+                ${displayRentalPrice.toFixed(2)}
               </span>
-            )}
-            {type === "rent" && <span className="text-xs text-muted-foreground">/month</span>}
+              {hasRentalDiscount && (
+                <span className="text-xs text-muted-foreground line-through">
+                  ${rentalPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-muted-foreground">Purchase</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-secondary">
+                ${displayPurchasePrice.toFixed(2)}
+              </span>
+              {hasPurchaseDiscount && (
+                <span className="text-xs text-muted-foreground line-through">
+                  ${purchasePrice.toFixed(2)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* CTA Button */}
-        <Link
-          href={`/${type === "rent" ? "rent" : "purchase"}/${id}`}
-          className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
-            type === "rent"
-              ? "bg-primary text-white hover:bg-primary/90"
-              : "bg-secondary text-white hover:bg-secondary/90"
-          }`}
-        >
-          {type === "rent" ? "Rent Now" : "Buy Now"}
-        </Link>
+        {/* CTA Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Link
+            href={`/product/${id}?mode=rent`}
+            className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
+              inStock
+                ? "bg-primary text-white hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            }`}
+          >
+            Rent
+          </Link>
+          <Link
+            href={`/product/${id}?mode=purchase`}
+            className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
+              inStock
+                ? "bg-secondary text-white hover:bg-secondary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            }`}
+          >
+            Buy
+          </Link>
+        </div>
       </div>
     </div>
   );
