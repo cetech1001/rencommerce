@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ChevronDown, Grid3x3, List } from "lucide-react";
-import { ProductCard } from "@/lib/components";
+import { ProductCard } from "@/lib/components/client";
 import Image from "next/image";
 import { allProducts } from "@/lib/data";
 

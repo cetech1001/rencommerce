@@ -1,6 +1,6 @@
 import { ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
-import { ProductCard } from "@/lib/components";
+import { ProductCard } from "@/lib/components/client";
 import { rentalBenefits, rentalProducts } from "@/lib/data";
 
 export default function RentPage() {

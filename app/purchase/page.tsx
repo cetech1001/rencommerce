@@ -1,6 +1,6 @@
 import { ArrowRight, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { ProductCard } from "@/lib/components";
+import { ProductCard } from "@/lib/components/client";
 import { buyingGuide, purchaseBenefits, purchaseProducts } from "@/lib/data";
 
 export default function PurchasePage() {

@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { Menu, X, ShoppingCart, User, LogOut, LayoutDashboard, Package } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/lib/contexts/CartContext";
 import { logoutAction } from "@/lib/actions/auth.actions";
 import type { SessionUser } from "@/lib/types";
-import { clientConfig } from "../config.client";
+import { clientConfig } from "../../config.client";
 
 interface HeaderClientProps {
   user: SessionUser | null;
@@ -15,6 +15,7 @@ interface HeaderClientProps {
 
 export function HeaderClient({ user }: HeaderClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { getTotalItems } = useCart();
   const cartCount = getTotalItems();
   const [isOpen, setIsOpen] = useState(false);
@@ -59,6 +60,9 @@ export function HeaderClient({ user }: HeaderClientProps) {
   ];
 
   const menuItems = user?.role === "ADMIN" ? adminMenuItems : userMenuItems;
+
+  // Create login URL with returnUrl query param
+  const loginUrl = `/auth/login?returnUrl=${encodeURIComponent(pathname)}`;
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
@@ -155,7 +159,7 @@ export function HeaderClient({ user }: HeaderClientProps) {
             </div>
           ) : (
             <Link
-              href="/auth/login"
+              href={loginUrl}
               className="px-6 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200"
             >
               Login
@@ -232,7 +236,7 @@ export function HeaderClient({ user }: HeaderClientProps) {
               </>
             ) : (
               <Link
-                href="/auth/login"
+                href={loginUrl}
                 className="block w-full px-6 py-2 rounded-lg bg-primary text-white font-medium text-center hover:bg-primary/90 transition-all duration-200"
                 onClick={() => setIsOpen(false)}
               >
