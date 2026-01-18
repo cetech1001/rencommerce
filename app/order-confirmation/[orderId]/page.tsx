@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { CheckCircle, Package, Loader2, ArrowRight } from "lucide-react";
+
+interface OrderData {
+  id: string;
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+  orderItems: {
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      name: string;
+    };
+  }[];
+}
+
+export default function OrderConfirmationPage() {
+  const params = useParams();
+  const orderId = params.orderId as string;
+  const [order, setOrder] = useState<OrderData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (orderId) {
+      fetchOrder();
+    }
+  }, [orderId]);
+
+  const fetchOrder = async () => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`);
+      const data = await response.json();
+
+      if (response.ok && data.order) {
+        setOrder(data.order);
+      }
+    } catch (err) {
+      console.error("Failed to load order");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-16">
+      <div className="container mx-auto px-4 max-w-3xl">
+        <div className="bg-white rounded-2xl border border-border p-8 sm:p-12 text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-green-600" />
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+            Order Confirmed!
+          </h1>
+
+          <p className="text-lg text-muted-foreground mb-8">
+            Thank you for your purchase. Your order has been successfully placed.
+          </p>
+
+          {order && (
+            <div className="bg-muted/50 rounded-xl p-6 mb-8 text-left">
+              <div className="flex items-center gap-3 mb-4">
+                <Package className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Order Details</h2>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Order Number:</span>
+                  <span className="font-mono font-medium">{order.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Amount:</span>
+                  <span className="font-semibold text-primary">${order.totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="font-medium text-green-600">{order.status}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-border">
+                <h3 className="font-semibold text-foreground mb-3">Items Ordered:</h3>
+                <ul className="space-y-2">
+                  {order.orderItems.map((item) => (
+                    <li key={item.id} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {item.product.name} × {item.quantity}
+                      </span>
+                      <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              We've sent a confirmation email with your order details. You can track your order status
+              in your account dashboard.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Link
+                href="/products"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-all duration-200"
+              >
+                Continue Shopping
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-lg border-2 border-primary text-primary font-semibold hover:bg-primary/10 transition-all duration-200"
+              >
+                Back to Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
