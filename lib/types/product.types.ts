@@ -1,14 +1,14 @@
 export interface Product {
   id: string;
   name: string;
-  description: string;
+  shortDescription: string;
+  category: string;
+  rentalPrice: number;
+  purchasePrice: number;
+  rentalSalePrice: number | null;
+  purchaseSalePrice: number | null;
   image: string;
-  rating: number;
-  reviews: number;
-  price: number;
-  originalPrice?: number;
-  badge?: string;
-  specs?: string[];
+  quantity: number;
 }
 
 export interface CreateProductData {

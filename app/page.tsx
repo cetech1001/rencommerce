@@ -4,6 +4,7 @@ import { ArrowRight, Check, Zap, Sun } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { howItWorks, testimonials } from "@/lib/data";
 import { prisma } from "@/lib/db";
+import { getMode } from "@/lib/utils";
 
 export default async function Home() {
   // Fetch featured products from database
@@ -124,7 +125,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+              <ProductCard key={product.id} {...product} mode={getMode(product)} />
             ))}
           </div>
         </div>

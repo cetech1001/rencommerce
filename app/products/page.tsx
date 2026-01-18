@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { ChevronDown, Grid3x3, List, X } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { ProductFilters } from "./ProductFilters";
+import { getMode } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -165,15 +166,6 @@ export default function Products() {
     setSelectedCategories([]);
     setPriceRange([0, 10000]);
   };
-
-  const getMode = ({ rentalPrice, purchasePrice }: Product) => {
-    if (rentalPrice > 0 && purchasePrice === 0) {
-      return "rental";
-    } else if (purchasePrice > 0 && rentalPrice === 0) {
-      return "purchase";
-    }
-    return undefined;
-  }
 
   const activeFiltersCount = selectedCategories.length;
 
