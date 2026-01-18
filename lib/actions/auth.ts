@@ -45,7 +45,16 @@ export async function register(data: RegisterData) {
     });
 
     // Create session
-    await createSession(user.id, user.role);
+    const token = await createSession({
+      userID: user.id,
+      role: user.role,
+      name: user.name,
+      email: user.email,
+    });
+
+    // Set session cookie
+    const { setSessionCookie } = await import("@/lib/session");
+    await setSessionCookie(token);
 
     return {
       success: true,
@@ -84,12 +93,16 @@ export async function login(data: LoginData) {
     }
 
     // Create session
-    await createSession({
+    const token = await createSession({
       userID: user.id,
       role: user.role,
       name: user.name,
       email: user.email,
     });
+
+    // Set session cookie
+    const { setSessionCookie } = await import("@/lib/session");
+    await setSessionCookie(token);
 
     return {
       success: true,
@@ -113,37 +126,13 @@ export async function logout() {
 }
 
 export async function getAuthSession() {
-  const session = await getCurrentUser();
-
-  if (!session?.id) {
-    return { user: null };
-  }
-
-  // Get user details
-  const user = await prisma.user.findUnique({
-    where: { id: session.id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      phone: true,
-      role: true,
-    },
-  });
+  const user = await getCurrentUser();
 
   if (!user) {
     return { user: null };
   }
 
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      phone: user.phone,
-      role: user.role,
-    },
-  };
+  return { user };
 }
 
 export async function requireAuth() {

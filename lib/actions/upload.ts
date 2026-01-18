@@ -1,25 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
+"use server";
+
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
-export async function POST(request: NextRequest) {
+export async function uploadImage(formData: FormData) {
   try {
-    const formData = await request.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return { success: false, error: "No file provided" };
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+      return { success: false, error: "File must be an image" };
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File size must be less than 5MB" }, { status: 400 });
+      return { success: false, error: "File size must be less than 5MB" };
     }
 
     // Create uploads directory if it doesn't exist
@@ -43,12 +43,9 @@ export async function POST(request: NextRequest) {
     // Return public URL
     const url = `/uploads/${filename}`;
 
-    return NextResponse.json({ url }, { status: 200 });
+    return { success: true, url };
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "Failed to upload file" },
-      { status: 500 }
-    );
+    return { success: false, error: "Failed to upload file" };
   }
 }

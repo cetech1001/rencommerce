@@ -24,9 +24,9 @@ export function OrdersTable() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch("/api/admin/orders");
-      const data = await response.json();
-      setOrders(data.orders || []);
+      const { getAllOrders } = await import("@/lib/queries/orders");
+      const data = await getAllOrders();
+      setOrders(data || []);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
     } finally {

@@ -32,9 +32,9 @@ export function ProductsTable() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/admin/products");
-      const data = await response.json();
-      setProducts(data.products || []);
+      const { getAllProducts } = await import("@/lib/queries/products");
+      const data = await getAllProducts();
+      setProducts(data || []);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
@@ -46,14 +46,13 @@ export function ProductsTable() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const response = await fetch(`/api/admin/products/${productId}`, {
-        method: "DELETE",
-      });
+      const { deleteProduct } = await import("@/lib/actions/product");
+      const result = await deleteProduct(productId);
 
-      if (response.ok) {
+      if (result.success) {
         setProducts(products.filter((p) => p.id !== productId));
       } else {
-        alert("Failed to delete product");
+        alert(result.error || "Failed to delete product");
       }
     } catch (error) {
       console.error("Failed to delete product:", error);

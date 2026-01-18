@@ -24,9 +24,9 @@ export function UsersTable() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users");
-      const data = await response.json();
-      setUsers(data.users || []);
+      const { getAllUsers } = await import("@/lib/queries/user");
+      const data = await getAllUsers();
+      setUsers(data || []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
@@ -38,14 +38,13 @@ export function UsersTable() {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-      });
+      const { deleteUser } = await import("@/lib/actions/user");
+      const result = await deleteUser(userId);
 
-      if (response.ok) {
+      if (result.success) {
         setUsers(users.filter((u) => u.id !== userId));
       } else {
-        alert("Failed to delete user");
+        alert(result.error || "Failed to delete user");
       }
     } catch (error) {
       console.error("Failed to delete user:", error);

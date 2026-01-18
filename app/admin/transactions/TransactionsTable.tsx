@@ -24,9 +24,9 @@ export function TransactionsTable() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch("/api/admin/transactions");
-      const data = await response.json();
-      setTransactions(data.transactions || []);
+      const { getAllTransactions } = await import("@/lib/queries/transaction");
+      const data = await getAllTransactions();
+      setTransactions(data || []);
     } catch (error) {
       console.error("Failed to fetch transactions:", error);
     } finally {

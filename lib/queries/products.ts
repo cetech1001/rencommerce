@@ -1,7 +1,42 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/actions/auth";
 
+// Admin-only query to get all products
+export async function getAllProducts() {
+  await requireAdmin();
+
+  try {
+    const products = await prisma.product.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return products;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+}
+
+export async function getProductByIDAdmin(productID: string) {
+  await requireAdmin();
+
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productID },
+    });
+
+    return product;
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return null;
+  }
+}
+
+// Public queries
 export async function getProducts(options?: {
   category?: string;
   isActive?: boolean;

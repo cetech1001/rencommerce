@@ -37,14 +37,13 @@ export function ImageUpload({ value, onChange, label, required = false }: ImageU
       const formData = new FormData();
       formData.append("file", croppedBlob, selectedFile?.name || "image.jpg");
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const { uploadImage } = await import("@/lib/actions/upload");
+      const result = await uploadImage(formData);
 
-      const data = await response.json();
-      if (data.url) {
-        onChange(data.url);
+      if (result.success && result.url) {
+        onChange(result.url);
+      } else {
+        alert(result.error || "Failed to upload image");
       }
     } catch (error) {
       console.error("Upload failed:", error);
