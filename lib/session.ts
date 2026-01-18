@@ -83,7 +83,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     id: payload.userID,
     email: payload.email,
     name: payload.name,
-    role: payload.role as "USER" | "ADMIN",
+    role: payload.role as "CUSTOMER" | "ADMIN",
   };
 }
 

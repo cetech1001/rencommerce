@@ -7,7 +7,7 @@ import Image from "next/image";
 interface ProductCardProps {
   id: string;
   name: string;
-  description: string;
+  shortDescription: string;
   image: string;
   category: string;
   rentalPrice: number;
@@ -22,7 +22,7 @@ interface ProductCardProps {
 export const ProductCard = ({
   id,
   name,
-  description,
+  shortDescription,
   image,
   category,
   quantity,
@@ -70,7 +70,7 @@ export const ProductCard = ({
                   </h3>
                 </Link>
                 <p className="text-sm text-muted-foreground mb-2">
-                  {description}
+                  {shortDescription}
                 </p>
                 <span className="inline-block px-2 py-1 bg-muted text-xs font-medium rounded">
                   {category}
@@ -174,7 +174,7 @@ export const ProductCard = ({
             </h3>
           </Link>
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {description}
+            {shortDescription}
           </p>
           <span className="inline-block px-2 py-1 bg-muted text-xs font-medium rounded">
             {category}

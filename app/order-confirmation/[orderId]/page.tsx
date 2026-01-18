@@ -10,7 +10,7 @@ interface OrderData {
   id: string;
   totalAmount: number;
   status: string;
-  createdAt: string;
+  createdAt: Date;
   orderItems: {
     id: string;
     quantity: number;
@@ -23,19 +23,19 @@ interface OrderData {
 
 export default function OrderConfirmationPage() {
   const params = useParams();
-  const orderId = params.orderId as string;
+  const orderID = params.orderId as string;
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (orderId) {
+    if (orderID) {
       fetchOrder();
     }
-  }, [orderId]);
+  }, [orderID]);
 
   const fetchOrder = async () => {
     try {
-      const orderData = await getOrderByID(orderId);
+      const orderData = await getOrderByID(orderID);
 
       if (orderData) {
         setOrder(orderData);
@@ -111,7 +111,7 @@ export default function OrderConfirmationPage() {
 
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              We've sent a confirmation email with your order details. You can track your order status
+              {"We've"} sent a confirmation email with your order details. You can track your order status
               in your account dashboard.
             </p>
 

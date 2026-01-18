@@ -3,11 +3,13 @@ export interface SessionPayload {
   email: string;
   name: string;
   role: string;
+  phone?: string;
 }
 
 export interface SessionUser {
   id: string;
   email: string;
   name: string;
-  role: "USER" | "ADMIN";
+  role: "CUSTOMER" | "ADMIN";
+  phone?: string;
 }

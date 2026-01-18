@@ -299,7 +299,7 @@ export default function Products() {
                       id={product.id}
                       quantity={product.quantity}
                       name={product.name}
-                      description={product.shortDescription}
+                      shortDescription={product.shortDescription}
                       category={product.category}
                       rentalPrice={product.rentalPrice}
                       purchasePrice={product.purchasePrice}

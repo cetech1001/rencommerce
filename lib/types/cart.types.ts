@@ -1,4 +1,4 @@
-export type ProductType = "rent" | "buy";
+export type ProductType = "rent" | "purchase";
 
 export interface CartItem {
   id: string;

@@ -75,13 +75,16 @@ const invalidCredentialsResponse = (): ActionResponse<{
   };
 };
 
-export async function login(data: LoginCredentials) {
+export async function login(_: unknown, data: FormData) {
   try {
-    const { email, password } = data;
+    const rawData = {
+      email: data.get('email'),
+      password: data.get('password'),
+    }
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: rawData.email?.toString() },
     });
 
     if (!user) {
@@ -89,7 +92,7 @@ export async function login(data: LoginCredentials) {
     }
 
     // Verify password
-    const isValid = await verifyPassword(password, user.password);
+    const isValid = await verifyPassword(rawData.password?.toString() || '', user.password);
 
     if (!isValid) {
       return invalidCredentialsResponse();

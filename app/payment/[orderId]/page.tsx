@@ -48,7 +48,7 @@ interface OrderData {
 export default function PaymentPage() {
   const router = useRouter();
   const params = useParams();
-  const orderId = params.orderId as string;
+  const orderID = params.orderID as string;
   const { clearCart } = useCart();
 
   const [loading, setLoading] = useState(true);
@@ -78,14 +78,14 @@ export default function PaymentPage() {
   };
 
   useEffect(() => {
-    if (orderId) {
+    if (orderID) {
       fetchOrder();
     }
-  }, [orderId]);
+  }, [orderID]);
 
   const fetchOrder = async () => {
     try {
-      const orderData = await getOrderByID(orderId);
+      const orderData = await getOrderByID(orderID);
 
       if (orderData) {
         setOrder(orderData);
@@ -146,7 +146,7 @@ export default function PaymentPage() {
     setIsProcessing(true);
 
     const result = await processPayment({
-      orderID: orderId,
+      orderID: orderID,
       paymentMethod: paymentState.method,
       paymentInfo: {
         cardName: paymentState.cardName,
@@ -161,7 +161,7 @@ export default function PaymentPage() {
     if (result.success) {
       // Clear cart and redirect
       clearCart();
-      router.push(`/order-confirmation/${orderId}`);
+      router.push(`/order-confirmation/${orderID}`);
     } else {
       setError(result.error || "Payment failed");
       setIsProcessing(false);
@@ -406,11 +406,11 @@ export default function PaymentPage() {
                       <p className="text-xs text-muted-foreground font-medium mb-1">REFERENCE</p>
                       <div className="flex items-center gap-2">
                         <code className="text-sm font-mono bg-white px-3 py-2 rounded border border-border flex-1">
-                          {orderId}
+                          {orderID}
                         </code>
                         <button
                           type="button"
-                          onClick={() => handleCopy(orderId, "reference")}
+                          onClick={() => handleCopy(orderID, "reference")}
                           className="p-2 hover:bg-white rounded transition-colors"
                         >
                           {copiedField === "reference" ? (
@@ -595,7 +595,7 @@ export default function PaymentPage() {
 
               {paymentState.method === "CRYPTO" && (
                 <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-700 mb-4">
-                  You'll pay {cryptoAmount.toFixed(8)} {paymentState.selectedCrypto.toUpperCase()}
+                  {"You'll"} pay {cryptoAmount.toFixed(8)} {paymentState.selectedCrypto.toUpperCase()}
                 </div>
               )}
 
