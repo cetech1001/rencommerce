@@ -21,5 +21,5 @@ export interface CartContextType {
   getTotalPrice: () => number;
   getRentItems: () => CartItem[];
   getBuyItems: () => CartItem[];
-  getItemQuantity: (productId: string, type: ProductType) => number;
+  getItemQuantity: (productID: string, type: ProductType) => number;
 }

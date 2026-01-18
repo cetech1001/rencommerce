@@ -8,28 +8,26 @@ import { getMode } from "@/lib/utils";
 
 export default async function Home() {
   // Fetch featured products from database
-  const featuredProducts = await prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: {
       isActive: true,
       quantity: { gt: 0 },
-    },
-    select: {
-      id: true,
-      name: true,
-      shortDescription: true,
-      category: true,
-      rentalPrice: true,
-      purchasePrice: true,
-      rentalSalePrice: true,
-      purchaseSalePrice: true,
-      image: true,
-      quantity: true,
     },
     orderBy: {
       createdAt: "desc",
     },
     take: 4, // Show 4 featured products
   });
+
+  const featuredProducts = products.map((product) => ({
+    ...product,
+    additionalImages: product.additionalImages as string[],
+    features: product.additionalImages as string[],
+    specifications: product.specifications as Record<string, string>,
+    createdAt: product.createdAt.toLocaleDateString(),
+    updatedAt: product.updatedAt.toLocaleDateString(),
+  }));
+  
   return (
     <>
       {/* Hero Section */}

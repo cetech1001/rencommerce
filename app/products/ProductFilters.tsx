@@ -1,15 +1,11 @@
-"use client";
+ "use client";
 
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-
-interface Category {
-  name: string;
-  count: number;
-}
+import type { ProductCategory } from "@/lib/types";
 
 interface ProductFiltersProps {
-  categories: Category[];
+  categories: ProductCategory[];
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
   priceRange: [number, number];

@@ -11,3 +11,11 @@ export interface UpdateUserData {
   email?: string;
   role?: "CUSTOMER" | "ADMIN";
 }
+
+export interface IUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "CUSTOMER" | "ADMIN";
+  createdAt: string;
+}

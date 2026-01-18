@@ -16,7 +16,14 @@ export async function getAllProducts() {
       },
     });
 
-    return products;
+    return products.map((product) => ({
+      ...product,
+      additionalImages: product.additionalImages as string[],
+      features: product.additionalImages as string[],
+      specifications: product.specifications as Record<string, string>,
+      createdAt: product.createdAt.toLocaleDateString(),
+      updatedAt: product.updatedAt.toLocaleDateString(),
+    }));
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];

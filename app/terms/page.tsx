@@ -68,7 +68,7 @@ export default function TermsPage() {
               <div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">1. Acceptance of Terms</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  By accessing and using EnergyHub's website and services, you accept and agree to be
+                  By accessing and using {"EnergyHub's"} website and services, you accept and agree to be
                   bound by the terms and provision of this agreement. If you do not agree to abide by
                   the above, please do not use this service.
                 </p>

@@ -2,16 +2,10 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: "CUSTOMER" | "ADMIN";
-}
+import type { IUser } from "@/lib/types";
 
 interface UserFormModalProps {
-  user: User | null;
+  user: IUser | null;
   onClose: () => void;
 }
 

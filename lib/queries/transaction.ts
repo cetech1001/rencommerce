@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/actions/auth";
+import type { TransactionListItem } from "@/lib/types";
 
-export async function getAllTransactions() {
+export async function getAllTransactions(): Promise<TransactionListItem[]> {
   await requireAdmin();
 
   try {
@@ -25,8 +26,7 @@ export async function getAllTransactions() {
       },
     });
 
-    // Transform data to match the frontend interface
-    return transactions.map((transaction) => ({
+    const formattedTransactions: TransactionListItem[] = transactions.map((transaction) => ({
       id: transaction.id,
       orderId: transaction.orderID,
       userId: transaction.order.userID,
@@ -36,6 +36,8 @@ export async function getAllTransactions() {
       paymentMethod: transaction.paymentMethod,
       transactionDate: transaction.createdAt.toISOString(),
     }));
+
+    return formattedTransactions;
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];

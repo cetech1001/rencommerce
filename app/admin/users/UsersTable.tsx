@@ -3,20 +3,13 @@
 import { useState, useEffect } from "react";
 import { Edit, Trash2, Plus } from "lucide-react";
 import { UserFormModal } from "./UserFormModal";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: "CUSTOMER" | "ADMIN";
-  createdAt: Date;
-}
+import { IUser } from "@/lib/types";
 
 export function UsersTable() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<IUser | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -34,15 +27,15 @@ export function UsersTable() {
     }
   };
 
-  const handleDelete = async (userId: string) => {
+  const handleDelete = async (userID: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
       const { deleteUser } = await import("@/lib/actions/user");
-      const result = await deleteUser(userId);
+      const result = await deleteUser(userID);
 
       if (result.success) {
-        setUsers(users.filter((u) => u.id !== userId));
+        setUsers(users.filter((u) => u.id !== userID));
       } else {
         alert(result.error || "Failed to delete user");
       }
@@ -52,7 +45,7 @@ export function UsersTable() {
     }
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: IUser) => {
     setEditingUser(user);
     setShowModal(true);
   };

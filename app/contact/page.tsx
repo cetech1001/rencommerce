@@ -80,7 +80,7 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-semibold text-foreground mb-1">Email</h3>
                       <p className="text-muted-foreground">support@energyhub.com</p>
-                      <p className="text-sm text-muted-foreground">We'll respond within 24hrs</p>
+                      <p className="text-sm text-muted-foreground">{"We'll"} respond within 24hrs</p>
                     </div>
                   </div>
 
@@ -150,7 +150,7 @@ export default function ContactPage() {
                 {submitted && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                     <p className="text-green-900 font-medium">
-                      Thank you for your message! We'll get back to you soon.
+                      Thank you for your message! {"We'll"} get back to you soon.
                     </p>
                   </div>
                 )}

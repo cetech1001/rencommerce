@@ -8,42 +8,7 @@ import { ArrowLeft, Lock, Copy, Check, Zap, DollarSign, Bitcoin, Loader2 } from 
 import { useCart } from "@/lib/contexts";
 import { getOrderByID } from "@/lib/queries/orders";
 import { processPayment } from "@/lib/actions/payment";
-
-type PaymentMethod = "CARD" | "BANK_TRANSFER" | "CRYPTO";
-
-interface PaymentState {
-  method: PaymentMethod;
-  // Card fields
-  cardName: string;
-  cardNumber: string;
-  cardExpiry: string;
-  cardCVC: string;
-  // Bank transfer fields
-  accountName: string;
-  accountNumber: string;
-  bankName: string;
-  routingNumber: string;
-  // Crypto fields
-  walletAddress: string;
-  selectedCrypto: "bitcoin" | "ethereum";
-}
-
-interface OrderData {
-  id: string;
-  totalAmount: number;
-  shippingFee: number;
-  status: string;
-  orderItems: {
-    id: string;
-    quantity: number;
-    price: number;
-    product: {
-      id: string;
-      name: string;
-      image: string;
-    };
-  }[];
-}
+import type { OrderDetail, PaymentFormState, PaymentMethod } from "@/lib/types";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -54,10 +19,10 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [order, setOrder] = useState<OrderData | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [paymentState, setPaymentState] = useState<PaymentState>({
+  const [paymentState, setPaymentState] = useState<PaymentFormState>({
     method: "CARD",
     cardName: "",
     cardNumber: "",

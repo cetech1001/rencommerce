@@ -7,12 +7,13 @@ import { CheckCircle, Package, ArrowRight } from "lucide-react";
 
 export default function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderID, setOrderID] = useState<string | null>(null);
 
-  useEffect(() => {
-    const id = searchParams.get("orderId");
-    setOrderId(id);
-  }, [searchParams]);
+  const id = searchParams.get("orderID");
+
+  useEffect(() => {  
+    setOrderID(id);
+  }, [id]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-12 sm:py-20">
@@ -26,20 +27,20 @@ export default function CheckoutSuccessContent() {
             Order Confirmed!
           </h1>
           <p className="text-lg text-muted-foreground mb-8">
-            Thank you for your order. We've received your payment and will process your order shortly.
+            Thank you for your order. {"We've"} received your payment and will process your order shortly.
           </p>
 
-          {orderId && (
+          {orderID && (
             <div className="bg-muted rounded-lg p-4 mb-8">
               <p className="text-sm text-muted-foreground mb-1">Order ID</p>
-              <p className="font-mono font-semibold text-foreground">{orderId}</p>
+              <p className="font-mono font-semibold text-foreground">{orderID}</p>
             </div>
           )}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 text-left">
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-foreground">What's Next?</h2>
+              <h2 className="font-semibold text-foreground">{"What's"} Next?</h2>
             </div>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex gap-2">

@@ -1,28 +1,11 @@
-"use client";
+ "use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { ChevronDown, Grid3x3, List, X } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { ProductFilters } from "./ProductFilters";
 import { getMode } from "@/lib/utils";
-
-interface Product {
-  id: string;
-  name: string;
-  shortDescription: string;
-  category: string;
-  rentalPrice: number;
-  purchasePrice: number;
-  rentalSalePrice: number | null;
-  purchaseSalePrice: number | null;
-  image: string;
-  quantity: number;
-}
-
-interface Category {
-  name: string;
-  count: number;
-}
+import type { Product, ProductCategory } from "@/lib/types";
 
 const sortOptions = [
   { label: "Newest", value: "newest" },
@@ -36,7 +19,7 @@ const sortOptions = [
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [productType, setProductType] = useState<"rental" | "purchase" | "all">("all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);

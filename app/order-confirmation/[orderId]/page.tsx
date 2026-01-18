@@ -5,26 +5,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CheckCircle, Package, Loader2, ArrowRight } from "lucide-react";
 import { getOrderByID } from "@/lib/queries/orders";
-
-interface OrderData {
-  id: string;
-  totalAmount: number;
-  status: string;
-  createdAt: Date;
-  orderItems: {
-    id: string;
-    quantity: number;
-    price: number;
-    product: {
-      name: string;
-    };
-  }[];
-}
+import type { OrderDetail } from "@/lib/types";
 
 export default function OrderConfirmationPage() {
   const params = useParams();
   const orderID = params.orderId as string;
-  const [order, setOrder] = useState<OrderData | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

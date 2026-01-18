@@ -235,7 +235,7 @@ export default function FAQsPage() {
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <h2 className="text-3xl font-bold text-foreground mb-4">Still Have Questions?</h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Can't find the answer you're looking for? Our customer support team is here to help.
+            {"Can't"} find the answer {"you're"} looking for? Our customer support team is here to help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

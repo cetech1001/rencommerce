@@ -15,13 +15,7 @@ import { useCart } from "@/lib/contexts";
 import { getAuthSession } from "@/lib/actions/auth";
 import { validateCoupon } from "@/lib/actions/coupons";
 import { createOrder } from "@/lib/actions/checkout";
-
-interface AppliedCoupon {
-  code: string;
-  discountType: "PERCENTAGE" | "FIXED";
-  discountValue: number;
-  scope: "ITEM" | "CART";
-}
+import type { AppliedCoupon } from "@/lib/types";
 
 export default function CheckoutPage() {
   const router = useRouter();

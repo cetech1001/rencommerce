@@ -20,37 +20,7 @@ import {
 } from "lucide-react";
 import { useCart, useToast } from "@/lib/contexts";
 import { ProductType } from "@/lib/types";
-
-interface Product {
-  id: string;
-  name: string;
-  shortDescription: string;
-  longDescription: string;
-  category: string;
-  rentalPrice: number;
-  purchasePrice: number;
-  rentalSalePrice: number | null;
-  purchaseSalePrice: number | null;
-  image: string;
-  additionalImages: string[];
-  features: string[];
-  specifications: Record<string, string>;
-  quantity: number;
-  averageRating: number;
-  reviewCount: number;
-  reviews: Review[];
-}
-
-interface Review {
-  id: string;
-  rating: number;
-  title: string;
-  remarks: string;
-  createdAt: string;
-  user: {
-    name: string;
-  };
-}
+import type { Product } from "@/lib/types";
 
 export default function ProductDetailContent() {
   const params = useParams();
@@ -277,7 +247,7 @@ export default function ProductDetailContent() {
                     <Star
                       key={i}
                       className={`w-4 h-4 ${
-                        i < Math.floor(product.averageRating)
+                        i < Math.floor(product.averageRating || 0)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-muted-foreground"
                       }`}
@@ -285,7 +255,7 @@ export default function ProductDetailContent() {
                   ))}
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {product.averageRating > 0 ? product.averageRating : "No ratings"} (
+                  {product.averageRating && product.averageRating > 0 ? product.averageRating : "No ratings"} (
                   {product.reviewCount} {product.reviewCount === 1 ? "review" : "reviews"})
                 </span>
               </div>
@@ -479,12 +449,12 @@ export default function ProductDetailContent() {
         <div className="bg-white rounded-xl border border-border p-8">
           <h2 className="text-2xl font-bold text-foreground mb-8">Customer Reviews</h2>
 
-          {product.reviewCount > 0 ? (
+          {product.reviewCount && product.reviewCount > 0 ? (
             <>
               <div className="mb-8 pb-8 border-b border-border">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="text-4xl font-bold text-foreground">
-                    {product.averageRating.toFixed(1)}
+                    {(product.averageRating || 0).toFixed(1)}
                   </div>
                   <div>
                     <div className="flex gap-0.5 mb-1">
@@ -492,7 +462,7 @@ export default function ProductDetailContent() {
                         <Star
                           key={i}
                           className={`w-5 h-5 ${
-                            i < Math.floor(product.averageRating)
+                            i < Math.floor(product.averageRating || 0)
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-muted-foreground"
                           }`}
@@ -508,7 +478,7 @@ export default function ProductDetailContent() {
               </div>
 
               <div className="space-y-6">
-                {product.reviews.slice(0, 5).map((review) => (
+                {product.reviews?.slice(0, 5).map((review) => (
                   <div
                     key={review.id}
                     className="pb-6 border-b border-border last:border-b-0 last:pb-0"

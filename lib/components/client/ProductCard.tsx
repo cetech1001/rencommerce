@@ -13,8 +13,8 @@ interface ProductCardProps {
   rentalPrice: number;
   purchasePrice: number;
   quantity: number;
-  rentalSalePrice: number | null;
-  purchaseSalePrice: number | null;
+  rentalSalePrice?: number | null;
+  purchaseSalePrice?: number | null;
   viewMode?: "grid" | "list";
   mode?: "rental" | "purchase";
 }

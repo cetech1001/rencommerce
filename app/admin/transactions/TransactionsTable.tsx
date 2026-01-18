@@ -1,22 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { TransactionListItem, TransactionStatus } from "@/lib/types";
 
-interface Transaction {
-  id: string;
-  orderId: string;
-  userId: string;
-  userName: string;
-  amount: number;
-  status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
-  paymentMethod: string;
-  transactionDate: string;
-}
+type TransactionFilter = "ALL" | TransactionStatus;
 
 export function TransactionsTable() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"ALL" | "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED">("ALL");
+  const [filter, setFilter] = useState<TransactionFilter>("ALL");
 
   useEffect(() => {
     fetchTransactions();

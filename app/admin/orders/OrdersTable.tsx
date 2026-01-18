@@ -2,21 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Eye } from "lucide-react";
+import type { OrderListItem, OrderStatus } from "@/lib/types";
 
-interface Order {
-  id: string;
-  userID: string;
-  userName: string;
-  totalAmount: number;
-  status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
-  type: "RENT" | "PURCHASE";
-  createdAt: string;
-}
+type OrderFilter = "ALL" | OrderStatus;
 
 export function OrdersTable() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"ALL" | "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED">("ALL");
+  const [filter, setFilter] = useState<OrderFilter>("ALL");
 
   useEffect(() => {
     fetchOrders();

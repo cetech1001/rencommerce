@@ -20,7 +20,10 @@ export async function getAllUsers() {
       },
     });
 
-    return users;
+    return users.map(user => ({
+      ...user,
+      createdAt: user.createdAt.toLocaleDateString(),
+    }));
   } catch (error) {
     console.error("Error fetching users:", error);
     return [];

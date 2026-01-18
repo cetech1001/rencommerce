@@ -3,25 +3,7 @@
 import { useState, useEffect } from "react";
 import { Edit, Trash2, Plus } from "lucide-react";
 import Link from "next/link";
-
-interface Product {
-  id: string;
-  name: string;
-  shortDescription: string;
-  longDescription: string;
-  category: string;
-  rentalPrice: number;
-  purchasePrice: number;
-  rentalSalePrice: number | null;
-  purchaseSalePrice: number | null;
-  quantity: number;
-  image: string;
-  // additionalImages: string[] | null;
-  // features: string[];
-  // specifications: Record<string, string>;
-  createdAt: Date;
-}
-
+import type { Product } from "@/lib/types";
 export function ProductsTable() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,7 +122,7 @@ export function ProductsTable() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {new Date(product.createdAt).toLocaleDateString()}
+                      {product.createdAt}
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                       <div className="flex items-center justify-end gap-2">

@@ -2,23 +2,7 @@
 
 import { useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
-
-interface Product {
-  id: string;
-  name: string;
-  shortDescription: string;
-  longDescription: string;
-  category: string;
-  rentalPrice: number;
-  purchasePrice: number;
-  rentalSalePrice: number | null;
-  purchaseSalePrice: number | null;
-  quantity: number;
-  image: string;
-  additionalImages: string[];
-  features: string[];
-  specifications: Record<string, string>;
-}
+import type { Product } from "@/lib/types";
 
 interface ProductFormModalProps {
   product: Product | null;
