@@ -1,9 +1,34 @@
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { ArrowRight, TrendingUp, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/lib/components/client";
-import { buyingGuide, purchaseBenefits, purchaseProducts } from "@/lib/data";
+import { buyingGuide, purchaseBenefits } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
 
-export default function PurchasePage() {
+export default async function PurchasePage() {
+  // Fetch purchase products from database
+  const purchaseProducts = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      quantity: { gt: 0 },
+      purchasePrice: { gt: 0 },
+    },
+    select: {
+      id: true,
+      name: true,
+      shortDescription: true,
+      category: true,
+      rentalPrice: true,
+      purchasePrice: true,
+      rentalSalePrice: true,
+      purchaseSalePrice: true,
+      image: true,
+      quantity: true,
+    },
+    orderBy: {
+      purchasePrice: "asc",
+    },
+    take: 12, // Show 12 products
+  });
   return (
     <>
       {/* Hero Section */}
@@ -125,11 +150,27 @@ export default function PurchasePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {purchaseProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
+          {purchaseProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {purchaseProducts.map((product) => (
+                <ProductCard key={product.id} {...product} mode="purchase" />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-xl border border-border">
+              <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                No Products Available for Purchase
+              </h3>
+              <p className="text-muted-foreground mb-6">Check back soon for new products</p>
+              <Link
+                href="/rent"
+                className="inline-block px-6 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-all duration-200"
+              >
+                View Rental Options
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

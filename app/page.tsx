@@ -2,9 +2,33 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Check, Zap, Sun } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
-import { featuredProducts, howItWorks, testimonials } from "@/lib/data";
+import { howItWorks, testimonials } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+export default async function Home() {
+  // Fetch featured products from database
+  const featuredProducts = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      quantity: { gt: 0 },
+    },
+    select: {
+      id: true,
+      name: true,
+      shortDescription: true,
+      category: true,
+      rentalPrice: true,
+      purchasePrice: true,
+      rentalSalePrice: true,
+      purchaseSalePrice: true,
+      image: true,
+      quantity: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 4, // Show 4 featured products
+  });
   return (
     <>
       {/* Hero Section */}

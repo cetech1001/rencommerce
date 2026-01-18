@@ -31,7 +31,7 @@ export default function CheckoutPage() {
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Form state
   const [email, setEmail] = useState("");
@@ -83,6 +83,8 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Failed to check auth:", error);
       setIsAuthenticated(false);
+    } finally {
+      setCheckingAuth(false);
     }
   };
 
@@ -178,7 +180,7 @@ export default function CheckoutPage() {
     if (!phone) newErrors.push("Phone number is required");
 
     // Account creation validation
-    if (!isAuthenticated && showAccountForm) {
+    if (!isAuthenticated) {
       if (!password || password.length < 6) {
         newErrors.push("Password must be at least 6 characters");
       }
@@ -263,7 +265,7 @@ export default function CheckoutPage() {
     setLoading(true);
 
     // Create account if needed
-    if (!isAuthenticated && showAccountForm) {
+    if (!isAuthenticated) {
       const accountCreated = await handleCreateAccount();
       if (!accountCreated) {
         setLoading(false);
@@ -319,7 +321,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 || checkingAuth) {
     return null;
   }
 
@@ -358,22 +360,16 @@ export default function CheckoutPage() {
             {/* Authentication Status */}
             {!isAuthenticated && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-4">Account</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Create an account to track your orders and speed up future checkouts.
+                <h2 className="text-lg font-semibold text-foreground mb-4">Create Account</h2>
+                <p className="text-sm text-muted-foreground">
+                  An account is required to complete your order and track your purchases.
                 </p>
-                <button
-                  onClick={() => setShowAccountForm(!showAccountForm)}
-                  className="text-primary font-medium hover:underline text-sm"
-                >
-                  {showAccountForm ? "Continue as guest" : "Create an account"}
-                </button>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Account Creation Fields */}
-              {!isAuthenticated && showAccountForm && (
+              {!isAuthenticated && (
                 <div className="bg-white rounded-xl border border-border p-6">
                   <h2 className="text-xl font-semibold text-foreground mb-4">Create Account</h2>
                   <div className="space-y-4">
