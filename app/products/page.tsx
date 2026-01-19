@@ -27,6 +27,7 @@ export default function Products() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [sortBy, setSortBy] = useState<PRODUCT_ORDER_BY>(PRODUCT_ORDER_BY.CREATED_AT);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedSort, setSelectedSort] = useState<string>("Newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [pagination, setPagination] = useState<PaginationMeta>({
@@ -104,15 +105,11 @@ export default function Products() {
 
   useEffect(() => {
     fetchProducts();
-  }, priceRange);
+  }, [priceRange, currentPage, selectedCategories, productType, sortBy, sortOrder]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [productType, selectedCategories, priceRange, sortBy, sortOrder]);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [currentPage]);
+  }, [productType, selectedCategories, sortBy, sortOrder]);
 
   const handleClearFilters = () => {
     setProductType(undefined);
@@ -186,10 +183,10 @@ export default function Products() {
                 {/* Sort Dropdown */}
                 <div className="relative">
                   <select
-                    value={sortBy}
+                    value={selectedSort}
                     onChange={(e) => {
                       const option = sortOptions.find(s => s.label === e.target.value)!;
-                      console.log("Option: ", option);
+                      setSelectedSort(e.target.value);
                       setSortBy(option.value);
                       setSortOrder(option.order);
                     }}
