@@ -3,34 +3,20 @@ import Image from "next/image";
 import { ArrowRight, Check, Zap, Sun } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { howItWorks, testimonials } from "@/lib/data";
-import { prisma } from "@/lib/db";
 import { getMode } from "@/lib/utils";
+import { getProducts } from "@/lib/queries/products";
 
 export default async function Home() {
-  // Fetch featured products from database
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      quantity: { gt: 0 },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 4, // Show 4 featured products
+  const featuredProducts = await getProducts({
+    isActive: true,
+    hasRentalPrice: true,
+    hasPurchasePrice: true,
+    isInStock: true,
+    limit: 4
   });
-
-  const featuredProducts = products.map((product) => ({
-    ...product,
-    additionalImages: product.additionalImages as string[],
-    features: product.additionalImages as string[],
-    specifications: product.specifications as Record<string, string>,
-    createdAt: product.createdAt.toLocaleDateString(),
-    updatedAt: product.updatedAt.toLocaleDateString(),
-  }));
   
   return (
     <>
-      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 pt-12 sm:pt-20 pb-16 sm:pb-28 overflow-hidden">
         {/* Background Elements */}
         <div className="absolute top-10 right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl opacity-50 hidden md:block" />
@@ -97,7 +83,7 @@ export default async function Home() {
             <div className="relative h-80 sm:h-96 md:h-full">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-2xl" />
               <Image
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=600&fit=crop"
+                src="/images/hero.jpg"
                 alt="Clean energy technology"
                 width={600}
                 height={600}
@@ -123,7 +109,11 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} mode={getMode(product)} />
+              <ProductCard
+               key={product.id}
+               {...product}
+               mode={getMode(product)}
+              />
             ))}
           </div>
         </div>

@@ -3,20 +3,12 @@
 import { ShoppingCart, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { PRODUCT_CARD_MODE } from "@/lib/utils";
+import { IProduct } from "@/lib/types";
 
-interface ProductCardProps {
-  id: string;
-  name: string;
-  shortDescription: string;
-  image: string;
-  category: string;
-  rentalPrice: number;
-  purchasePrice: number;
-  quantity: number;
-  rentalSalePrice?: number | null;
-  purchaseSalePrice?: number | null;
+interface ProductCardProps extends IProduct {
   viewMode?: "grid" | "list";
-  mode?: "rental" | "purchase";
+  mode?: PRODUCT_CARD_MODE;
 }
 
 export const ProductCard = ({
@@ -115,7 +107,7 @@ export const ProductCard = ({
           {/* Actions */}
           <div className="flex gap-3 mt-4">
             <Link
-              href={`/product/${id}?mode=rent`}
+              href={`/product/${id}?mode=${PRODUCT_CARD_MODE.RENTAL}`}
               className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 text-center text-sm flex items-center justify-center gap-2 ${
                 inStock
                   ? "bg-primary text-white hover:bg-primary/90"
@@ -126,7 +118,7 @@ export const ProductCard = ({
               Rent
             </Link>
             <Link
-              href={`/product/${id}?mode=purchase`}
+              href={`/product/${id}?mode=${PRODUCT_CARD_MODE.PURCHASE}`}
               className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 text-center text-sm flex items-center justify-center gap-2 ${
                 inStock
                   ? "bg-secondary text-white hover:bg-secondary/90"
@@ -183,7 +175,7 @@ export const ProductCard = ({
 
         {/* Prices */}
         <div className="mt-4 pt-4 border-t border-border space-y-2">
-          {(!mode || mode === 'rental') ? (
+          {(!mode || mode === PRODUCT_CARD_MODE.RENTAL) ? (
             <div className="flex items-baseline justify-between">
               <span className="text-xs text-muted-foreground">Rental/day</span>
               <div className="flex items-baseline gap-2">
@@ -201,7 +193,7 @@ export const ProductCard = ({
             <></>
           )}
 
-          {(!mode || mode === 'purchase') ? (
+          {(!mode || mode === PRODUCT_CARD_MODE.PURCHASE) ? (
             <div className="flex items-baseline justify-between">
               <span className="text-xs text-muted-foreground">Purchase</span>
               <div className="flex items-baseline gap-2">
@@ -222,7 +214,7 @@ export const ProductCard = ({
 
         {/* CTA Buttons */}
         <div className="flex gap-2 mt-4">
-          {(!mode || mode === 'rental') ? (
+          {(!mode || mode === PRODUCT_CARD_MODE.RENTAL) ? (
             <Link
               href={`/product/${id}?mode=rent`}
               className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${
@@ -234,7 +226,7 @@ export const ProductCard = ({
               Rent
             </Link>
           ) : <></>}
-          {(!mode || mode === 'purchase') ? (
+          {(!mode || mode === PRODUCT_CARD_MODE.PURCHASE) ? (
             <Link
               href={`/product/${id}?mode=purchase`}
               className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-200 text-center text-sm ${

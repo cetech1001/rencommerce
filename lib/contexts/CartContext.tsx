@@ -1,15 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import type { CartItem, CartContextType } from "@/lib/types";
+import type { CartItem, CartContextType, ProductType } from "@/lib/types";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = "rencommerce_cart";
 
 // Helper function to generate unique cart item key
-const getCartItemKey = (productId: string, type: "rent" | "purchase") => {
-  return `${productId}_${type}`;
+const getCartItemKey = (productID: string, type: ProductType) => {
+  return `${productID}_${type}`;
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({

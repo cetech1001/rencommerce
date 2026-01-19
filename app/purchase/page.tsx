@@ -1,32 +1,20 @@
-import { ArrowRight, TrendingUp, ShoppingCart } from "lucide-react";
+import { TrendingUp, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/lib/components/client";
 import { buyingGuide, purchaseBenefits } from "@/lib/data";
-import { prisma } from "@/lib/db";
+import { getProducts } from "@/lib/queries/products";
+import { PRODUCT_ORDER_BY } from "@/lib/types";
+import { getMode } from "@/lib/utils";
 
 export default async function PurchasePage() {
-  const purchaseProducts = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      quantity: { gt: 0 },
-      purchasePrice: { gt: 0 },
-    },
-    select: {
-      id: true,
-      name: true,
-      shortDescription: true,
-      category: true,
-      rentalPrice: true,
-      purchasePrice: true,
-      rentalSalePrice: true,
-      purchaseSalePrice: true,
-      image: true,
-      quantity: true,
-    },
-    orderBy: {
-      purchasePrice: "asc",
-    },
-    take: 12,
+  const purchaseProducts = await getProducts({
+    hasRentalPrice: false,
+    hasPurchasePrice: true,
+    isInStock: true,
+    isActive: true,
+    limit: 12,
+    orderBy: PRODUCT_ORDER_BY.PURCHASE_PRICE,
+    sortOrder: 'asc',
   });
 
   return (
@@ -108,7 +96,7 @@ export default async function PurchasePage() {
           {purchaseProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {purchaseProducts.map((product) => (
-                <ProductCard key={product.id} {...product} mode="purchase" />
+                <ProductCard key={product.id} {...product} mode={getMode(product)} />
               ))}
             </div>
           ) : (

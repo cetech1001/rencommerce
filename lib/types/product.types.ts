@@ -1,27 +1,28 @@
-export interface Product {
+export interface IProduct {
   id: string;
   name: string;
   shortDescription: string;
-  longDescription: string;
+  image: string;
   category: string;
-  isActive: boolean;
-  quantity: number;
   rentalPrice: number;
   purchasePrice: number;
+  quantity: number;
   rentalSalePrice?: number | null;
   purchaseSalePrice?: number | null;
-  image: string;
+}
+
+export interface Product extends IProduct {
+  longDescription: string;
+  isActive: boolean;
   additionalImages: string[];
   features: string[];
   specifications: Record<string, string>;
-  averageRating?: number;
-  reviewCount?: number;
-  reviews?: ProductReview[];
+  reviews?: IProductReview[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ProductReview {
+export interface IProductReview {
   id: string;
   rating: number;
   title: string;
@@ -75,6 +76,16 @@ export type ProductQueryOptions = {
   isActive?: boolean;
   hasRentalPrice?: boolean;
   hasPurchasePrice?: boolean;
+  isInStock?: boolean;
   limit?: number;
-  orderBy?: "price" | "name" | "createdAt";
+  orderBy?: PRODUCT_ORDER_BY;
+  sortOrder?: 'asc' | 'desc';
 };
+
+export const PRODUCT_ORDER_BY = {
+  RENTAL_PRICE: 'rentalPrice',
+  PURCHASE_PRICE: 'purchasePrice',
+  NAME: 'name',
+  CREATED_AT: 'createdAt',
+}
+export type PRODUCT_ORDER_BY = typeof PRODUCT_ORDER_BY[keyof typeof PRODUCT_ORDER_BY];

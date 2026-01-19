@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/actions/auth";
-import type { ProductQueryOptions } from "@/lib/types";
+import { PRODUCT_ORDER_BY, type IProduct, type ProductQueryOptions } from "@/lib/types";
 import { ProductOrderByWithAggregationInput, ProductWhereInput } from "../prisma/models";
 
 // Admin-only query to get all products
@@ -58,18 +58,23 @@ export async function getProductByIDAdmin(productID: string) {
 }
 
 // Public queries
-export async function getProducts(options?: ProductQueryOptions) {
+export async function getProducts(options?: ProductQueryOptions): Promise<IProduct[]> {
   const {
     category,
     isActive = true,
     hasRentalPrice,
     hasPurchasePrice,
     limit,
-    orderBy = "createdAt",
+    isInStock,
+    orderBy = PRODUCT_ORDER_BY.CREATED_AT,
+    sortOrder = 'desc',
   } = options || {};
 
-  const where: ProductWhereInput = { isActive, quantity: { gt: 0 } };
+  const where: ProductWhereInput = {};
 
+  if (isActive !== undefined) {
+    where.isActive = isActive;
+  }
   if (category) where.category = category;
   if (hasRentalPrice !== undefined) {
     where.rentalPrice = hasRentalPrice ? { gt: 0 } : { equals: 0 };
@@ -77,13 +82,13 @@ export async function getProducts(options?: ProductQueryOptions) {
   if (hasPurchasePrice !== undefined) {
     where.purchasePrice = hasPurchasePrice ? { gt: 0 } : { equals: 0 };
   }
+  if (isInStock) {
+    where.quantity = isInStock ? { gt: 0 } : { equals: 0 };
+  }
 
-  const orderByClause: ProductOrderByWithAggregationInput =
-    orderBy === "price"
-      ? { purchasePrice: "asc" }
-      : orderBy === "name"
-      ? { name: "asc" }
-      : { createdAt: "desc" };
+  const orderByClause: ProductOrderByWithAggregationInput = {
+    [orderBy]: sortOrder,
+  };
 
   const products = await prisma.product.findMany({
     where,

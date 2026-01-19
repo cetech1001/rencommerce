@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/lib/contexts/CartContext";
 import { logout } from "@/lib/actions/auth";
-import type { SessionUser } from "@/lib/types";
+import { USER_ROLE, type SessionUser } from "@/lib/types";
 import { clientConfig } from "../../config.client";
 
 interface HeaderClientProps {
@@ -45,7 +45,6 @@ export function HeaderClient({ user }: HeaderClientProps) {
   const handleLogout = async () => {
     await logout();
     setShowUserMenu(false);
-    router.push("/");
     router.refresh();
   };
 
@@ -59,15 +58,13 @@ export function HeaderClient({ user }: HeaderClientProps) {
     { label: "Orders", href: "/account/orders", icon: Package },
   ];
 
-  const menuItems = user?.role === "ADMIN" ? adminMenuItems : userMenuItems;
+  const menuItems = user?.role === USER_ROLE.ADMIN ? adminMenuItems : userMenuItems;
 
-  // Create login URL with returnUrl query param
   const loginUrl = `/auth/login?returnUrl=${encodeURIComponent(pathname)}`;
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
       <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary">
             <svg

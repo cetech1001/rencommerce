@@ -2,33 +2,21 @@ import { ArrowRight, Zap, Calendar } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/lib/components/client";
 import { rentalBenefits } from "@/lib/data";
-import { prisma } from "@/lib/db";
+import { getProducts } from "@/lib/queries/products";
+import { PRODUCT_ORDER_BY } from "@/lib/types";
+import { getMode } from "@/lib/utils";
 
 export default async function RentPage() {
-  // Fetch rental products from database
-  const rentalProducts = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      quantity: { gt: 0 },
-      rentalPrice: { gt: 0 },
-    },
-    select: {
-      id: true,
-      name: true,
-      shortDescription: true,
-      category: true,
-      rentalPrice: true,
-      purchasePrice: true,
-      rentalSalePrice: true,
-      purchaseSalePrice: true,
-      image: true,
-      quantity: true,
-    },
-    orderBy: {
-      rentalPrice: "asc",
-    },
-    take: 12, // Show 12 products
+  const rentalProducts = await getProducts({
+    hasRentalPrice: true,
+    hasPurchasePrice: false,
+    isInStock: true,
+    isActive: true,
+    limit: 12,
+    orderBy: PRODUCT_ORDER_BY.RENTAL_PRICE,
+    sortOrder: 'asc',
   });
+  
   return (
     <>
       {/* Hero Section */}
@@ -108,7 +96,11 @@ export default async function RentPage() {
           {rentalProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {rentalProducts.map((product) => (
-                <ProductCard key={product.id} {...product} mode="rental" />
+                <ProductCard
+                  key={product.id}
+                  {...product}
+                  mode={getMode(product)}
+                />
               ))}
             </div>
           ) : (

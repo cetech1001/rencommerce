@@ -9,7 +9,6 @@ export const Footer = () => {
     <footer className="bg-foreground text-white mt-20">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary">
@@ -28,7 +27,6 @@ export const Footer = () => {
             </p>
           </div>
 
-          {/* Quick Links */}
           <div>
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm text-gray-300">
@@ -50,7 +48,6 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Support */}
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-gray-300">
@@ -72,7 +69,6 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Contact */}
           <div>
             <h4 className="font-semibold mb-4">Get in Touch</h4>
             <ul className="space-y-3 text-sm text-gray-300">
@@ -102,7 +98,6 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Social Links */}
         <div className="border-t border-gray-700 pt-8 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-gray-400 mb-4 md:mb-0">
             © {currentYear} {clientConfig.app.name}. All rights reserved.
