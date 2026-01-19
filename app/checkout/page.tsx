@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Calendar,
   AlertCircle,
   Tag,
   Loader2,
@@ -19,7 +18,7 @@ import type { AppliedCoupon } from "@/lib/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getRentItems, getBuyItems } = useCart();
+  const { items, getRentItems } = useCart();
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -38,7 +37,6 @@ export default function CheckoutPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // Billing Address
-  const [billingFullName, setBillingFullName] = useState("");
   const [billingAddress1, setBillingAddress1] = useState("");
   const [billingAddress2, setBillingAddress2] = useState("");
   const [billingCity, setBillingCity] = useState("");
@@ -48,7 +46,6 @@ export default function CheckoutPage() {
 
   // Shipping Address
   const [sameAsBilling, setSameAsBilling] = useState(true);
-  const [shippingFullName, setShippingFullName] = useState("");
   const [shippingAddress1, setShippingAddress1] = useState("");
   const [shippingAddress2, setShippingAddress2] = useState("");
   const [shippingCity, setShippingCity] = useState("");
@@ -65,7 +62,6 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false);
 
   const rentItems = getRentItems();
-  const buyItems = getBuyItems();
   const hasRentals = rentItems.length > 0;
 
   useEffect(() => {
@@ -164,7 +160,6 @@ export default function CheckoutPage() {
     if (!phone) newErrors.push("Phone is required");
 
     // Billing address
-    if (!billingFullName) newErrors.push("Billing name is required");
     if (!billingAddress1) newErrors.push("Billing address is required");
     if (!billingCity) newErrors.push("Billing city is required");
     if (!billingState) newErrors.push("Billing state is required");
@@ -173,7 +168,6 @@ export default function CheckoutPage() {
 
     // Shipping address (if different)
     if (!sameAsBilling) {
-      if (!shippingFullName) newErrors.push("Shipping name is required");
       if (!shippingAddress1) newErrors.push("Shipping address is required");
       if (!shippingCity) newErrors.push("Shipping city is required");
       if (!shippingState) newErrors.push("Shipping state is required");
@@ -225,7 +219,6 @@ export default function CheckoutPage() {
         rentalEndDate: item.type === "rent" ? rentalDates[item.id]?.endDate : null,
       })),
       billingAddress: {
-        fullName: billingFullName,
         addressLine1: billingAddress1,
         addressLine2: billingAddress2,
         city: billingCity,
@@ -234,7 +227,6 @@ export default function CheckoutPage() {
         country: billingCountry,
       },
       shippingAddress: {
-        fullName: sameAsBilling ? billingFullName : shippingFullName,
         addressLine1: sameAsBilling ? billingAddress1 : shippingAddress1,
         addressLine2: sameAsBilling ? billingAddress2 : shippingAddress2,
         city: sameAsBilling ? billingCity : shippingCity,
@@ -396,19 +388,6 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={billingFullName}
-                      onChange={(e) => setBillingFullName(e.target.value)}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
                       Address Line 1 *
                     </label>
                     <input
@@ -508,19 +487,6 @@ export default function CheckoutPage() {
 
                 {!sameAsBilling && (
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={shippingFullName}
-                        onChange={(e) => setShippingFullName(e.target.value)}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Address Line 1 *

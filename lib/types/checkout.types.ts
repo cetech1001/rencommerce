@@ -12,7 +12,6 @@ export interface CheckoutItem {
 }
 
 export interface AddressData {
-  fullName: string;
   addressLine1: string;
   addressLine2?: string;
   city: string;

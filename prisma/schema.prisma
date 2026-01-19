@@ -67,7 +67,6 @@ model ProductAlias {
 model Address {
   id                String   @id @default(cuid())
   userID            String
-  fullName          String
   addressLine1      String
   addressLine2      String?
   city              String

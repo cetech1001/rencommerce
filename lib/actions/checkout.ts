@@ -118,7 +118,6 @@ export async function createOrder(data: CheckoutData) {
     const createdBillingAddress = await prisma.address.create({
       data: {
         userID,
-        fullName: data.billingAddress.fullName,
         addressLine1: data.billingAddress.addressLine1,
         addressLine2: data.billingAddress.addressLine2 || null,
         city: data.billingAddress.city,
@@ -137,7 +136,6 @@ export async function createOrder(data: CheckoutData) {
           await prisma.address.create({
             data: {
               userID,
-              fullName: data.shippingAddress.fullName,
               addressLine1: data.shippingAddress.addressLine1,
               addressLine2: data.shippingAddress.addressLine2 || null,
               city: data.shippingAddress.city,
