@@ -38,6 +38,11 @@ export interface ProductCategory {
   count: number;
 }
 
+export interface PriceRange {
+  min: number;
+  max: number;
+}
+
 export interface CreateProductData {
   name: string;
   shortDescription: string;
@@ -72,12 +77,16 @@ export interface UpdateProductData {
 }
 
 export type ProductQueryOptions = {
-  category?: string;
+  page?: number;
+  limit: number;
+  search?: string;
+  categories?: string[];
   isActive?: boolean;
   hasRentalPrice?: boolean;
   hasPurchasePrice?: boolean;
   isInStock?: boolean;
-  limit?: number;
+  minPrice?: number;
+  maxPrice?: number;
   orderBy?: PRODUCT_ORDER_BY;
   sortOrder?: 'asc' | 'desc';
 };
@@ -87,5 +96,18 @@ export const PRODUCT_ORDER_BY = {
   PURCHASE_PRICE: 'purchasePrice',
   NAME: 'name',
   CREATED_AT: 'createdAt',
-}
+} as const;
 export type PRODUCT_ORDER_BY = typeof PRODUCT_ORDER_BY[keyof typeof PRODUCT_ORDER_BY];
+
+export interface ProductSearchFilters {
+  categories?: string[];
+  type?: string;
+  minPrice?: string;
+  maxPrice?: string;
+}
+
+export interface ProductSortOptions {
+  label: string;
+  value: PRODUCT_ORDER_BY;
+  order: 'asc' | 'desc';
+}

@@ -3,6 +3,7 @@
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import type { ProductCategory } from "@/lib/types";
+import { PRODUCT_CARD_MODE } from "@/lib/utils";
 
 interface ProductFiltersProps {
   categories: ProductCategory[];
@@ -10,8 +11,8 @@ interface ProductFiltersProps {
   onCategoriesChange: (categories: string[]) => void;
   priceRange: [number, number];
   onPriceRangeChange: (range: [number, number]) => void;
-  productType: "rental" | "purchase" | "all";
-  onProductTypeChange: (type: "rental" | "purchase" | "all") => void;
+  productType: PRODUCT_CARD_MODE | undefined;
+  onProductTypeChange: (type: PRODUCT_CARD_MODE | undefined) => void;
   onClearAll: () => void;
   maxPrice: number;
 }
@@ -70,9 +71,9 @@ export function ProductFilters({
           </h3>
           <div className="flex gap-2">
             <button
-              onClick={() => onProductTypeChange("rental")}
+              onClick={() => onProductTypeChange(PRODUCT_CARD_MODE.RENTAL)}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                productType === "rental"
+                productType === PRODUCT_CARD_MODE.RENTAL
                   ? "bg-primary text-white"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
@@ -80,9 +81,9 @@ export function ProductFilters({
               Rental
             </button>
             <button
-              onClick={() => onProductTypeChange("purchase")}
+              onClick={() => onProductTypeChange(PRODUCT_CARD_MODE.PURCHASE)}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                productType === "purchase"
+                productType === PRODUCT_CARD_MODE.PURCHASE
                   ? "bg-primary text-white"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
@@ -90,9 +91,9 @@ export function ProductFilters({
               Purchase
             </button>
             <button
-              onClick={() => onProductTypeChange("all")}
+              onClick={() => onProductTypeChange(undefined)}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                productType === "all"
+                productType === undefined
                   ? "bg-primary text-white"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}

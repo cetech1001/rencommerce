@@ -1,86 +1,68 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/actions/auth";
-import { PRODUCT_ORDER_BY, type IProduct, type ProductQueryOptions } from "@/lib/types";
+import { PRODUCT_ORDER_BY, type IProduct, type ProductQueryOptions, type ProductCategory, type PriceRange } from "@/lib/types";
 import { ProductOrderByWithAggregationInput, ProductWhereInput } from "../prisma/models";
+import { PRODUCT_CARD_MODE } from "../utils";
+import { PaginatedResponse } from "../types/pagination.types";
 
-// Admin-only query to get all products
-export async function getAllProducts() {
-  await requireAdmin();
-
-  try {
-    const products = await prisma.product.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return products.map((product) => ({
-      ...product,
-      additionalImages: product.additionalImages as string[],
-      features: product.additionalImages as string[],
-      specifications: product.specifications as Record<string, string>,
-      createdAt: product.createdAt.toLocaleDateString(),
-      updatedAt: product.updatedAt.toLocaleDateString(),
-    }));
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    return [];
-  }
-}
-
-export async function getProductByIDAdmin(productID: string) {
-  await requireAdmin();
-
-  try {
-    const product = await prisma.product.findUnique({
-      where: { id: productID },
-      select: {
-        id: true,
-        name: true,
-        shortDescription: true,
-        category: true,
-        rentalPrice: true,
-        purchasePrice: true,
-        rentalSalePrice: true,
-        purchaseSalePrice: true,
-        image: true,
-        quantity: true,
-      }
-    });
-
-    return product;
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    return null;
-  }
-}
-
-// Public queries
-export async function getProducts(options?: ProductQueryOptions): Promise<IProduct[]> {
+export async function getProducts(options: ProductQueryOptions): Promise<PaginatedResponse<IProduct>> {
   const {
-    category,
+    page = 1,
+    limit,
+    search,
+    categories,
     isActive = true,
     hasRentalPrice,
     hasPurchasePrice,
-    limit,
     isInStock,
+    minPrice,
+    maxPrice,
     orderBy = PRODUCT_ORDER_BY.CREATED_AT,
     sortOrder = 'desc',
   } = options || {};
 
   const where: ProductWhereInput = {};
 
+  if (search) {
+    where.OR = [
+      { name: { search } },
+      { shortDescription: { search } },
+    ];
+  }
   if (isActive !== undefined) {
     where.isActive = isActive;
   }
-  if (category) where.category = category;
+  if (categories && categories.length > 0) {
+    where.category = { in: categories };
+  };
   if (hasRentalPrice !== undefined) {
-    where.rentalPrice = hasRentalPrice ? { gt: 0 } : { equals: 0 };
+    if (hasRentalPrice) {
+      if (!minPrice && !maxPrice) {
+        where.rentalPrice = { gt: 0 };
+      } else {
+        where.rentalPrice = {
+          gte: minPrice,
+          lte: maxPrice,
+        };
+      }
+    } else {
+      where.rentalPrice = { equals: 0 };
+    }
   }
   if (hasPurchasePrice !== undefined) {
-    where.purchasePrice = hasPurchasePrice ? { gt: 0 } : { equals: 0 };
+    if (hasPurchasePrice) {
+      if (!minPrice && !maxPrice) {
+        where.purchasePrice = { gt: 0 };
+      } else {
+        where.purchasePrice = {
+          gte: minPrice,
+          lte: maxPrice,
+        };
+      }
+    } else {
+      where.purchasePrice = { equals: 0 };
+    }
   }
   if (isInStock) {
     where.quantity = isInStock ? { gt: 0 } : { equals: 0 };
@@ -105,10 +87,22 @@ export async function getProducts(options?: ProductQueryOptions): Promise<IProdu
       quantity: true,
     },
     orderBy: orderByClause,
+    skip: limit * (page - 1),
     take: limit,
   });
 
-  return products;
+  const productsCount = await prisma.product.count({ where });
+  const meta = {
+    page,
+    itemsCount: products.length,
+    totalPages: Math.ceil(productsCount / limit),
+    totalCount: productsCount,
+  }
+
+  return {
+    data: products,
+    meta,
+  };
 }
 
 export async function getProductByID(productID: string) {
@@ -134,43 +128,89 @@ export async function getProductByID(productID: string) {
   return product;
 }
 
-export async function getFeaturedProducts(limit: number = 4) {
-  return getProducts({ limit, orderBy: "createdAt" });
-}
+export async function getCategories(type?: PRODUCT_CARD_MODE): Promise<ProductCategory[]> {
+  const where: ProductWhereInput = { isActive: true };
 
-export async function getRentalProducts(limit?: number) {
-  return getProducts({ hasRentalPrice: true, limit, orderBy: "price" });
-}
+  if (type === PRODUCT_CARD_MODE.RENTAL) {
+    where.rentalPrice = { gt: 0 };
+    where.purchasePrice = { equals: 0 };
+  } else if (type === PRODUCT_CARD_MODE.PURCHASE) {
+    where.purchasePrice = { gt: 0 };
+    where.rentalPrice = { equals: 0 };
+  }
 
-export async function getPurchaseProducts(limit?: number) {
-  return getProducts({ hasPurchasePrice: true, limit, orderBy: "price" });
-}
-
-export async function searchProducts(query: string) {
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      quantity: { gt: 0 },
-      OR: [
-        { name: { search: query } },
-        { shortDescription: { search: query } },
-        { longDescription: { search: query } },
-      ],
-    },
-    select: {
-      id: true,
-      name: true,
-      shortDescription: true,
+  const categories = await prisma.product.groupBy({
+    by: ["category"],
+    where,
+    _count: {
       category: true,
-      rentalPrice: true,
-      purchasePrice: true,
-      rentalSalePrice: true,
-      purchaseSalePrice: true,
-      image: true,
-      quantity: true,
     },
-    take: 20,
+    orderBy: {
+      category: "asc",
+    },
   });
 
-  return products;
+  return categories.map((result) => ({
+    name: result.category,
+    count: result._count.category,
+  }));
+}
+
+export async function getPriceRange(
+  type?: PRODUCT_CARD_MODE,
+  categories?: string[]
+): Promise<PriceRange> {
+  const where: ProductWhereInput = { isActive: true };
+
+  if (categories && categories.length > 0) {
+    where.category = { in: categories };
+  }
+
+  if (type === PRODUCT_CARD_MODE.RENTAL) {
+    where.rentalPrice = { gt: 0 };
+    where.purchasePrice = { equals: 0 };
+  } else if (type === PRODUCT_CARD_MODE.PURCHASE) {
+    where.purchasePrice = { gt: 0 };
+    where.rentalPrice = { equals: 0 };
+  }
+
+  const priceAggregates = await prisma.product.aggregate({
+    where,
+    _min: {
+      rentalPrice: true,
+      purchasePrice: true,
+    },
+    _max: {
+      rentalPrice: true,
+      purchasePrice: true,
+    },
+  });
+
+  const includeRental = type !== PRODUCT_CARD_MODE.PURCHASE;
+  const includePurchase = type !== PRODUCT_CARD_MODE.RENTAL;
+
+  const minValues: number[] = [];
+  const maxValues: number[] = [];
+
+  if (includeRental && priceAggregates._min.rentalPrice !== null) {
+    minValues.push(priceAggregates._min.rentalPrice);
+  }
+  if (includePurchase && priceAggregates._min.purchasePrice !== null) {
+    minValues.push(priceAggregates._min.purchasePrice);
+  }
+
+  if (includeRental && priceAggregates._max.rentalPrice !== null) {
+    maxValues.push(priceAggregates._max.rentalPrice);
+  }
+  if (includePurchase && priceAggregates._max.purchasePrice !== null) {
+    maxValues.push(priceAggregates._max.purchasePrice);
+  }
+
+  const min = minValues.length ? Math.min(...minValues) : 0;
+  const max = maxValues.length ? Math.max(...maxValues) : min;
+
+  return {
+    min,
+    max: Math.max(max, min),
+  };
 }

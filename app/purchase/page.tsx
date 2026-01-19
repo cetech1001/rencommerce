@@ -7,7 +7,7 @@ import { PRODUCT_ORDER_BY } from "@/lib/types";
 import { getMode } from "@/lib/utils";
 
 export default async function PurchasePage() {
-  const purchaseProducts = await getProducts({
+  const { data: purchaseProducts } = await getProducts({
     hasRentalPrice: false,
     hasPurchasePrice: true,
     isInStock: true,

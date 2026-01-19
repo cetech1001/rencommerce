@@ -1,75 +1,80 @@
  "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Grid3x3, List, X } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { ProductFilters } from "./ProductFilters";
-import { getMode } from "@/lib/utils";
-import type { Product, ProductCategory } from "@/lib/types";
+import { getMode, PRODUCT_CARD_MODE } from "@/lib/utils";
+import { PRODUCT_ORDER_BY, type ProductCategory, IProduct, PaginationMeta, ProductSortOptions } from "@/lib/types";
+import { getCategories, getPriceRange, getProducts } from "@/lib/queries/products";
 
-const sortOptions = [
-  { label: "Newest", value: "newest" },
-  { label: "Name: A to Z", value: "name-asc" },
-  { label: "Name: Z to A", value: "name-desc" },
-  { label: "Rental: Low to High", value: "rental-asc" },
-  { label: "Rental: High to Low", value: "rental-desc" },
-  { label: "Purchase: Low to High", value: "purchase-asc" },
-  { label: "Purchase: High to Low", value: "purchase-desc" },
+const sortOptions: ProductSortOptions[] = [
+  { label: "Newest", value: PRODUCT_ORDER_BY.CREATED_AT, order: 'desc' },
+  { label: "Name: A to Z", value: PRODUCT_ORDER_BY.NAME, order: "asc" },
+  { label: "Name: Z to A", value: PRODUCT_ORDER_BY.NAME, order: "desc" },
+  { label: "Rental: Low to High", value: PRODUCT_ORDER_BY.RENTAL_PRICE, order: "asc" },
+  { label: "Rental: High to Low", value: PRODUCT_ORDER_BY.RENTAL_PRICE, order: "desc" },
+  { label: "Purchase: Low to High", value: PRODUCT_ORDER_BY.PURCHASE_PRICE, order: "asc" },
+  { label: "Purchase: High to Low", value: PRODUCT_ORDER_BY.PURCHASE_PRICE, order: "desc" },
 ];
 
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [productType, setProductType] = useState<"rental" | "purchase" | "all">("all");
+  const [productType, setProductType] = useState<PRODUCT_CARD_MODE | undefined>(undefined);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState<PRODUCT_ORDER_BY>(PRODUCT_ORDER_BY.CREATED_AT);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    totalCount: 0,
+    totalPages: 0,
+    itemsCount: 0,
+  });
 
   const itemsPerPage = 12;
 
-  // Fetch products and filters on mount
-  useEffect(() => {
-    Promise.all([fetchProducts(), fetchFilters()]);
-  }, []);
-
-  // Fetch filters when type changes (affects categories and price range)
-  useEffect(() => {
-    if (products.length > 0) {
-      fetchFilters();
-      setSelectedCategories([]); // Clear categories when type changes
+  const fetchCategories = async () => {
+    try {
+      const categories = await getCategories(productType);
+      setCategories(categories);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
     }
-  }, [productType]);
+  };
 
-  // Fetch filters when categories change (affects price range only)
-  useEffect(() => {
-    if (products.length > 0 && selectedCategories.length > 0) {
-      fetchFilters();
+  const fetchPriceRange = async () => {
+    try {
+      const priceRange = await getPriceRange(productType, selectedCategories);
+      setPriceRange([priceRange.min, priceRange.max]);
+    } catch (error) {
+      console.error("Failed to fetch price range:", error);
     }
-  }, [selectedCategories]);
+  };
 
   const fetchProducts = async () => {
     try {
-      const params = new URLSearchParams();
-      if (productType !== "all") {
-        params.set("type", productType);
-      }
-      if (selectedCategories.length > 0) {
-        params.set("categories", selectedCategories.join(","));
-      }
-      if (priceRange[0] > 0 || priceRange[1] < 10000) {
-        params.set("minPrice", priceRange[0].toString());
-        params.set("maxPrice", priceRange[1].toString());
-      }
-
-      const queryString = params.toString();
-      const url = queryString ? `/api/products?${queryString}` : "/api/products";
-
-      const response = await fetch(url);
-      const data = await response.json();
-      setProducts(data.products || []);
+      const { data, meta } = await getProducts({
+        limit: itemsPerPage,
+        page: currentPage,
+        categories: selectedCategories,
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
+        hasRentalPrice: productType
+          ? productType === PRODUCT_CARD_MODE.RENTAL
+          : undefined,
+        hasPurchasePrice: productType
+          ? productType === PRODUCT_CARD_MODE.PURCHASE
+          : undefined,
+        orderBy: sortBy,
+        sortOrder,
+      });
+      setProducts(data);
+      setPagination(meta);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
@@ -77,77 +82,41 @@ export default function Products() {
     }
   };
 
-  const fetchFilters = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (productType !== "all") {
-        params.set("type", productType);
-      }
-      if (selectedCategories.length > 0) {
-        params.set("categories", selectedCategories.join(","));
-      }
-
-      const response = await fetch(`/api/products/filters?${params.toString()}`);
-      const data = await response.json();
-
-      setCategories(data.categories || []);
-
-      // Update price range based on filtered results
-      if (data.priceRange) {
-        setPriceRange([data.priceRange.min, data.priceRange.max]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch filters:", error);
-    }
-  };
-
-  // Sort products (filtering happens server-side)
-  const sortedProducts = useMemo(() => {
-    const sorted = [...products];
-    switch (sortBy) {
-      case "name-asc":
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-      case "name-desc":
-        return sorted.sort((a, b) => b.name.localeCompare(a.name));
-      case "rental-asc":
-        return sorted.sort((a, b) => a.rentalPrice - b.rentalPrice);
-      case "rental-desc":
-        return sorted.sort((a, b) => b.rentalPrice - a.rentalPrice);
-      case "purchase-asc":
-        return sorted.sort((a, b) => a.purchasePrice - b.purchasePrice);
-      case "purchase-desc":
-        return sorted.sort((a, b) => b.purchasePrice - a.purchasePrice);
-      case "newest":
-      default:
-        return sorted;
-    }
-  }, [products, sortBy]);
-
-  // Pagination
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = sortedProducts.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  // Refetch products when filters change
   useEffect(() => {
-    if (products.length > 0) {
-      setCurrentPage(1);
-      fetchProducts();
-    }
-  }, [productType, selectedCategories, priceRange]);
+    Promise.all([
+      fetchCategories(),
+      fetchPriceRange(),
+    ]);
+  }, []);
 
-  // Reset to page 1 when sort changes
+  useEffect(() => {
+    Promise.all([
+      fetchCategories(),
+      fetchPriceRange(),
+    ]);
+  }, [productType]);
+
+  useEffect(() => {
+    Promise.all([
+      fetchPriceRange(),
+    ]);
+  }, [selectedCategories]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, priceRange);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [sortBy]);
+  }, [productType, selectedCategories, priceRange, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [currentPage]);
 
   const handleClearFilters = () => {
-    setProductType("all");
+    setProductType(undefined);
     setSelectedCategories([]);
-    setPriceRange([0, 10000]);
   };
 
   const activeFiltersCount = selectedCategories.length;
@@ -200,7 +169,7 @@ export default function Products() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="text-sm text-muted-foreground">
-                  {sortedProducts.length} product{sortedProducts.length !== 1 ? 's' : ''}
+                  {pagination.totalCount} product{pagination.totalCount !== 1 ? 's' : ''}
                 </div>
                 {activeFiltersCount > 0 && (
                   <button
@@ -218,11 +187,16 @@ export default function Products() {
                 <div className="relative">
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+                    onChange={(e) => {
+                      const option = sortOptions.find(s => s.label === e.target.value)!;
+                      console.log("Option: ", option);
+                      setSortBy(option.value);
+                      setSortOrder(option.order);
+                    }}
                     className="appearance-none w-full sm:w-auto px-4 py-2 pr-10 bg-white border border-border rounded-lg text-sm font-medium text-foreground cursor-pointer hover:border-primary transition-colors"
                   >
                     {sortOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
+                      <option key={option.label} value={option.label}>
                         {option.label}
                       </option>
                     ))}
@@ -259,7 +233,7 @@ export default function Products() {
             </div>
 
             {/* Products Display */}
-            {paginatedProducts.length > 0 ? (
+            {products.length > 0 ? (
               <>
                 <div
                   className={
@@ -268,7 +242,7 @@ export default function Products() {
                       : "space-y-4"
                   }
                 >
-                  {paginatedProducts.map((product) => (
+                  {products.map((product) => (
                     <ProductCard
                       key={product.id}
                       id={product.id}
@@ -288,7 +262,7 @@ export default function Products() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {pagination.totalPages > 1 && (
                   <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
@@ -299,14 +273,14 @@ export default function Products() {
                     </button>
 
                     <div className="flex gap-2">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                         let pageNum;
-                        if (totalPages <= 5) {
+                        if (pagination.totalPages <= 5) {
                           pageNum = i + 1;
                         } else if (currentPage <= 3) {
                           pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
+                        } else if (currentPage >= pagination.totalPages - 2) {
+                          pageNum = pagination.totalPages - 4 + i;
                         } else {
                           pageNum = currentPage - 2 + i;
                         }
@@ -327,8 +301,8 @@ export default function Products() {
                     </div>
 
                     <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
+                      disabled={currentPage === pagination.totalPages}
                       className="px-4 py-2 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary"
                     >
                       Next →

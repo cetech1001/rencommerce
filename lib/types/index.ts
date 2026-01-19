@@ -9,3 +9,4 @@ export * from "./product.types";
 export * from "./transaction.types";
 export * from "./session.types";
 export * from "./user.types";
+export * from "./pagination.types";

@@ -7,7 +7,7 @@ import { getMode } from "@/lib/utils";
 import { getProducts } from "@/lib/queries/products";
 
 export default async function Home() {
-  const featuredProducts = await getProducts({
+  const { data: featuredProducts } = await getProducts({
     isActive: true,
     hasRentalPrice: true,
     hasPurchasePrice: true,
