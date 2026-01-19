@@ -29,10 +29,11 @@ export default function Cart() {
   useEffect(() => {
     const fetchProductStocks = async () => {
       try {
+        const { getProductStock } = await import("@/lib/queries/products");
+
         const stockPromises = items.map(async (item) => {
-          const response = await fetch(`/api/products/${item.id}`);
-          const data = await response.json();
-          return { id: item.id, quantity: data.product?.quantity || 0 };
+          const quantity = await getProductStock(item.id);
+          return { id: item.id, quantity };
         });
 
         const stocks = await Promise.all(stockPromises);

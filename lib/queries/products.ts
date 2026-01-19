@@ -106,6 +106,20 @@ export async function getProducts(options: ProductQueryOptions): Promise<Paginat
   };
 }
 
+export async function getProductStock(productID: string): Promise<number> {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productID },
+      select: { quantity: true },
+    });
+
+    return product?.quantity ?? 0;
+  } catch (error) {
+    console.error("Error fetching product stock:", error);
+    return 0;
+  }
+}
+
 export async function getProductByID(productID: string): Promise<Product | null> {
   const product = await prisma.product.findUnique({
     where: { id: productID },
