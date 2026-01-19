@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { PRODUCT_ORDER_BY, type IProduct, type ProductQueryOptions, type ProductCategory, type PriceRange } from "@/lib/types";
+import { PRODUCT_ORDER_BY, type IProduct, type ProductQueryOptions, type ProductCategory, type PriceRange, Product } from "@/lib/types";
 import { ProductOrderByWithAggregationInput, ProductWhereInput } from "../prisma/models";
 import { PRODUCT_CARD_MODE } from "../utils";
 import { PaginatedResponse } from "../types/pagination.types";
@@ -105,7 +105,7 @@ export async function getProducts(options: ProductQueryOptions): Promise<Paginat
   };
 }
 
-export async function getProductByID(productID: string) {
+export async function getProductByID(productID: string): Promise<Product | null> {
   const product = await prisma.product.findUnique({
     where: { id: productID },
     include: {
@@ -125,7 +125,16 @@ export async function getProductByID(productID: string) {
     },
   });
 
-  return product;
+  if (product) {
+    return {
+      ...product,
+      additionalImages: product?.additionalImages as string[],
+      features: product?.features as string[],
+      specifications: product?.specifications as Record<string, string>,
+    };
+  }
+  
+  return null;
 }
 
 export async function getCategories(type?: PRODUCT_CARD_MODE): Promise<ProductCategory[]> {

@@ -21,6 +21,7 @@ import {
 import { useCart, useToast } from "@/lib/contexts";
 import { ProductType } from "@/lib/types";
 import type { Product } from "@/lib/types";
+import { getProductByID } from "@/lib/queries/products";
 
 export default function ProductDetailContent() {
   const params = useParams();
@@ -64,15 +65,8 @@ export default function ProductDetailContent() {
 
   const fetchProduct = async () => {
     try {
-      const response = await fetch(`/api/products/${id}`);
-      const data = await response.json();
-
-      if (data.error) {
-        console.error("Product not found");
-        return;
-      }
-
-      setProduct(data.product);
+      const product = await getProductByID(id);
+      setProduct(product);
     } catch (error) {
       console.error("Failed to fetch product:", error);
     } finally {
@@ -121,6 +115,8 @@ export default function ProductDetailContent() {
     : 0;
 
   const allImages = [product.image, ...product.additionalImages];
+  const totalRating = product.reviews.reduce((a, b) => a + b.rating, 0);
+  const averageRating = totalRating / product.reviews.length;
 
   const handleAddToCart = () => {
     addToCart({
@@ -247,7 +243,7 @@ export default function ProductDetailContent() {
                     <Star
                       key={i}
                       className={`w-4 h-4 ${
-                        i < Math.floor(product.averageRating || 0)
+                        i < Math.floor(averageRating)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-muted-foreground"
                       }`}
@@ -255,8 +251,8 @@ export default function ProductDetailContent() {
                   ))}
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {product.averageRating && product.averageRating > 0 ? product.averageRating : "No ratings"} (
-                  {product.reviewCount} {product.reviewCount === 1 ? "review" : "reviews"})
+                  {averageRating > 0 ? averageRating : "No ratings"} (
+                  {product.reviews.length} {product.reviews.length === 1 ? "review" : "reviews"})
                 </span>
               </div>
             </div>
@@ -449,12 +445,12 @@ export default function ProductDetailContent() {
         <div className="bg-white rounded-xl border border-border p-8">
           <h2 className="text-2xl font-bold text-foreground mb-8">Customer Reviews</h2>
 
-          {product.reviewCount && product.reviewCount > 0 ? (
+          {product.reviews.length > 0 ? (
             <>
               <div className="mb-8 pb-8 border-b border-border">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="text-4xl font-bold text-foreground">
-                    {(product.averageRating || 0).toFixed(1)}
+                    {(averageRating || 0).toFixed(1)}
                   </div>
                   <div>
                     <div className="flex gap-0.5 mb-1">
@@ -462,7 +458,7 @@ export default function ProductDetailContent() {
                         <Star
                           key={i}
                           className={`w-5 h-5 ${
-                            i < Math.floor(product.averageRating || 0)
+                            i < Math.floor(averageRating || 0)
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-muted-foreground"
                           }`}
@@ -470,8 +466,8 @@ export default function ProductDetailContent() {
                       ))}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Based on {product.reviewCount}{" "}
-                      {product.reviewCount === 1 ? "review" : "reviews"}
+                      Based on {product.reviews.length}{" "}
+                      {product.reviews.length === 1 ? "review" : "reviews"}
                     </p>
                   </div>
                 </div>
@@ -509,9 +505,9 @@ export default function ProductDetailContent() {
                 ))}
               </div>
 
-              {product.reviewCount > 5 && (
+              {product.reviews.length > 5 && (
                 <button className="w-full mt-8 py-3 px-6 rounded-lg border border-border text-foreground hover:bg-muted transition-colors font-medium">
-                  View All {product.reviewCount} Reviews
+                  View All {product.reviews.length} Reviews
                 </button>
               )}
             </>

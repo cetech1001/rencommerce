@@ -17,9 +17,9 @@ export interface Product extends IProduct {
   additionalImages: string[];
   features: string[];
   specifications: Record<string, string>;
-  reviews?: IProductReview[];
-  createdAt: string;
-  updatedAt: string;
+  reviews: IProductReview[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IProductReview {
@@ -27,7 +27,7 @@ export interface IProductReview {
   rating: number;
   title: string;
   remarks: string;
-  createdAt: string;
+  createdAt: Date;
   user: {
     name: string;
   };
