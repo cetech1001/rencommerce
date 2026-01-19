@@ -85,6 +85,7 @@ export async function getProducts(options: ProductQueryOptions): Promise<Paginat
       purchaseSalePrice: true,
       image: true,
       quantity: true,
+      createdAt: true,
     },
     orderBy: orderByClause,
     skip: limit * (page - 1),

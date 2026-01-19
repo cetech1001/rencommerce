@@ -9,6 +9,7 @@ export interface IProduct {
   quantity: number;
   rentalSalePrice?: number | null;
   purchaseSalePrice?: number | null;
+  createdAt: Date;
 }
 
 export interface Product extends IProduct {
@@ -18,7 +19,6 @@ export interface Product extends IProduct {
   features: string[];
   specifications: Record<string, string>;
   reviews: IProductReview[];
-  createdAt: Date;
   updatedAt: Date;
 }
 

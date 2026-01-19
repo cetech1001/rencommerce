@@ -245,16 +245,7 @@ export default function Products() {
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}
-                      id={product.id}
-                      quantity={product.quantity}
-                      name={product.name}
-                      shortDescription={product.shortDescription}
-                      category={product.category}
-                      rentalPrice={product.rentalPrice}
-                      purchasePrice={product.purchasePrice}
-                      rentalSalePrice={product.rentalSalePrice}
-                      purchaseSalePrice={product.purchaseSalePrice}
-                      image={product.image}
+                      {...product}
                       viewMode={viewMode}
                       mode={getMode(product)}
                     />

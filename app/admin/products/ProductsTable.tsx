@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Edit, Trash2, Plus } from "lucide-react";
 import Link from "next/link";
-import type { Product } from "@/lib/types";
+import type { IProduct } from "@/lib/types";
 export function ProductsTable() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,9 +14,11 @@ export function ProductsTable() {
 
   const fetchProducts = async () => {
     try {
-      const { getAllProducts } = await import("@/lib/queries/products");
-      const data = await getAllProducts();
-      setProducts(data || []);
+      const { getProducts } = await import("@/lib/queries/products");
+      const { data, meta } = await getProducts({
+        limit: 10
+      });
+      setProducts(data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
@@ -122,7 +124,7 @@ export function ProductsTable() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {product.createdAt}
+                      {product.createdAt.toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                       <div className="flex items-center justify-end gap-2">
