@@ -2,12 +2,13 @@
 
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/actions/auth";
+import { IUser } from "../types";
 
 export async function getAllUsers() {
   await requireAdmin();
 
   try {
-    const users = await prisma.user.findMany({
+    return prisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -19,13 +20,22 @@ export async function getAllUsers() {
         createdAt: "desc",
       },
     });
-
-    return users.map(user => ({
-      ...user,
-      createdAt: user.createdAt.toLocaleDateString(),
-    }));
   } catch (error) {
     console.error("Error fetching users:", error);
     return [];
   }
+}
+
+export async function getUserByID(id: string): Promise<IUser | null> {
+  return prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      email: true,
+      phone: true,
+      createdAt: true,
+    }
+  });
 }

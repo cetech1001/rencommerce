@@ -128,7 +128,7 @@ export function UsersTable() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {user.createdAt.toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                       <div className="flex items-center justify-end gap-2">

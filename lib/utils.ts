@@ -32,3 +32,6 @@ export const convertToCrypto = (
   if (cryptoRate === 0) return 0;
   return usdAmount / cryptoRate;
 }
+
+// Re-export card validation utilities
+export * from "./utils/cardValidation";

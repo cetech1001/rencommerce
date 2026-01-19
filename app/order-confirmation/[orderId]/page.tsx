@@ -9,7 +9,7 @@ import type { OrderDetail } from "@/lib/types";
 
 export default function OrderConfirmationPage() {
   const params = useParams();
-  const orderID = params.orderId as string;
+  const orderID = params.orderID as string;
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 

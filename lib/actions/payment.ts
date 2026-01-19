@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import type { PaymentData } from "@/lib/types";
+import { OrderStatus, TransactionStatus } from "../prisma/enums";
 
-export async function processPayment(data: PaymentData) {
+export async function processPayment(data: PaymentData, orderStatus?: OrderStatus, transactionStatus?: TransactionStatus) {
   try {
     const { orderID, paymentMethod, paymentInfo } = data;
 
@@ -52,33 +53,34 @@ export async function processPayment(data: PaymentData) {
       data: {
         orderID,
         amount: order.totalAmount,
-        status: "COMPLETED", // In real app, this would be PENDING until confirmed
+        status: transactionStatus || TransactionStatus.PENDING,
         paymentMethod,
         paymentInfo: paymentInfo || {},
       },
     });
 
     // Update order status
-    await prisma.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: orderID },
-      data: { status: "PROCESSING" },
+      data: { status: orderStatus || OrderStatus.PROCESSING },
     });
 
     // Decrease product stock
-    for (const item of order.orderItems) {
-      await prisma.product.update({
-        where: { id: item.productID },
-        data: {
-          quantity: {
-            decrement: item.quantity,
+    if (updatedOrder.status === OrderStatus.PROCESSING) {
+      for (const item of order.orderItems) {
+        await prisma.product.update({
+          where: { id: item.productID },
+          data: {
+            quantity: {
+              decrement: item.quantity,
+            },
           },
-        },
-      });
-    }
+        });
+      }
 
-    // Revalidate relevant paths
-    revalidatePath("/products");
-    revalidatePath(`/product/${order.orderItems[0]?.productID}`);
+      revalidatePath("/products");
+      revalidatePath(`/product/${order.orderItems[0]?.productID}`);
+    }
 
     return {
       success: true,

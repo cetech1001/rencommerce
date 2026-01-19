@@ -1,18 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Lock, Copy, Check, Zap, DollarSign, Bitcoin, Loader2 } from "lucide-react";
+import { ArrowLeft, Lock, Copy, Check, Zap, DollarSign, Bitcoin, Loader2, AlertCircle } from "lucide-react";
 import { useCart } from "@/lib/contexts";
 import {
   getOrderByID,
   getCryptoRates,
 } from "@/lib/queries";
 import { processPayment } from "@/lib/actions/payment";
-import type { OrderDetail, PaymentFormState, PaymentMethod, CryptoRate } from "@/lib/types";
+import type { OrderDetail, PaymentFormState, CryptoRate } from "@/lib/types";
 import { convertToCrypto } from "@/lib/utils";
+import {
+  detectCardType,
+  formatCardNumber,
+  formatExpiryDate,
+  formatCVC,
+  validateCardNumber,
+  validateExpiryDate,
+  validateCVC,
+  validateCardholderName,
+  type CardType,
+} from "@/lib/utils/cardValidation";
+import { OrderStatus, PaymentMethod, TransactionStatus } from "@/lib/prisma/enums";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -26,6 +38,12 @@ export default function PaymentPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cryptoRates, setCryptoRates] = useState<CryptoRate | null>(null);
+  const [cardType, setCardType] = useState<CardType>("unknown");
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const cardNumberRef = useRef<HTMLInputElement>(null);
+  const cardExpiryRef = useRef<HTMLInputElement>(null);
+  const cardCVCRef = useRef<HTMLInputElement>(null);
 
   const [paymentState, setPaymentState] = useState<PaymentFormState>({
     method: "CARD",
@@ -68,9 +86,63 @@ export default function PaymentPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setPaymentState({ ...paymentState, [name]: value });
+  const handleCardNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPaymentState({ ...paymentState, cardName: value });
+
+    // Clear error when user starts typing
+    if (validationErrors.cardName) {
+      setValidationErrors({ ...validationErrors, cardName: "" });
+    }
+  };
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const type = detectCardType(value);
+    setCardType(type);
+
+    const formatted = formatCardNumber(value, type);
+    setPaymentState({ ...paymentState, cardNumber: formatted });
+
+    // Clear error when user starts typing
+    if (validationErrors.cardNumber) {
+      setValidationErrors({ ...validationErrors, cardNumber: "" });
+    }
+
+    // Auto-advance to expiry when complete
+    const cleaned = formatted.replace(/\s/g, "");
+    const maxLength = type === "amex" ? 15 : 16;
+    if (cleaned.length === maxLength && cardExpiryRef.current) {
+      cardExpiryRef.current.focus();
+    }
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatExpiryDate(value);
+    setPaymentState({ ...paymentState, cardExpiry: formatted });
+
+    // Clear error when user starts typing
+    if (validationErrors.cardExpiry) {
+      setValidationErrors({ ...validationErrors, cardExpiry: "" });
+    }
+
+    // Auto-advance to CVC when complete
+    const cleaned = formatted.replace(/\D/g, "");
+    if (cleaned.length === 4 && cardCVCRef.current) {
+      cardCVCRef.current.focus();
+    }
+  };
+
+  const handleCVCChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatCVC(value, cardType);
+    setPaymentState({ ...paymentState, cardCVC: formatted });
+
+    // Clear error when user starts typing
+    if (validationErrors.cardCVC) {
+      setValidationErrors({ ...validationErrors, cardCVC: "" });
+    }
   };
 
   const handleCopy = (text: string, field: string) => {
@@ -80,10 +152,39 @@ export default function PaymentPage() {
   };
 
   const validateCardPayment = () => {
-    if (!paymentState.cardName || !paymentState.cardNumber || !paymentState.cardExpiry || !paymentState.cardCVC) {
-      setError("Please fill in all card payment details.");
+    const errors: Record<string, string> = {};
+
+    // Validate cardholder name
+    const nameValidation = validateCardholderName(paymentState.cardName);
+    if (!nameValidation.isValid) {
+      errors.cardName = nameValidation.message || "Invalid name";
+    }
+
+    // Validate card number
+    const cardValidation = validateCardNumber(paymentState.cardNumber);
+    if (!cardValidation.isValid) {
+      errors.cardNumber = cardValidation.message || "Invalid card number";
+    }
+
+    // Validate expiry
+    const expiryValidation = validateExpiryDate(paymentState.cardExpiry);
+    if (!expiryValidation.isValid) {
+      errors.cardExpiry = expiryValidation.message || "Invalid expiry date";
+    }
+
+    // Validate CVC
+    const cvcValidation = validateCVC(paymentState.cardCVC, cardType);
+    if (!cvcValidation.isValid) {
+      errors.cardCVC = cvcValidation.message || "Invalid CVC";
+    }
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setError("Please correct the errors in the form.");
       return false;
     }
+
     return true;
   };
 
@@ -96,17 +197,29 @@ export default function PaymentPage() {
 
     setIsProcessing(true);
 
+    const orderStatus = paymentState.method === PaymentMethod.CARD ? OrderStatus.PENDING : OrderStatus.PROCESSING;
+    const transactionStatus = paymentState.method === PaymentMethod.CARD ? TransactionStatus.FAILED : TransactionStatus.PENDING;
+
+    // For other payment methods, process normally
     const result = await processPayment({
       orderID: orderID,
       paymentMethod: paymentState.method,
       paymentInfo: {
-        cardName: paymentState.cardName,
-        cardNumber: paymentState.cardNumber,
-        cardCVC: paymentState.cardCVC,
-        cardExpiry: paymentState.cardExpiry,
-        crypto: paymentState.selectedCrypto,
+        ...(paymentState.method === PaymentMethod.CARD && { cardName: paymentState.cardName }),
+        ...(paymentState.method === PaymentMethod.CARD && { cardNumber: paymentState.cardNumber }),
+        ...(paymentState.method === PaymentMethod.CARD && { cardCVC: paymentState.cardCVC }),
+        ...(paymentState.method === PaymentMethod.CARD && { cardExpiry: paymentState.cardExpiry }),
+        ...(paymentState.method === PaymentMethod.CRYPTO && { selectedCrypto: paymentState.selectedCrypto }),
       },
-    });
+    }, orderStatus, transactionStatus);
+
+    // For card payments, always redirect to declined page (as per requirements)
+    if (paymentState.method === "CARD") {
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      router.push(`/payment-declined/${orderID}`);
+      return;
+    }
 
     if (result.success) {
       // Clear cart and redirect
@@ -217,26 +330,56 @@ export default function PaymentPage() {
                       name="cardName"
                       required
                       value={paymentState.cardName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      onChange={handleCardNameChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                        validationErrors.cardName
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-border focus:ring-primary"
+                      }`}
                       placeholder="John Doe"
                     />
+                    {validationErrors.cardName && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>{validationErrors.cardName}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Card Number *
                     </label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      required
-                      value={paymentState.cardNumber}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                    />
+                    <div className="relative">
+                      <input
+                        ref={cardNumberRef}
+                        type="text"
+                        name="cardNumber"
+                        required
+                        value={paymentState.cardNumber}
+                        onChange={handleCardNumberChange}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 font-mono ${
+                          validationErrors.cardNumber
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-border focus:ring-primary"
+                        }`}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                      />
+                      {cardType !== "unknown" && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase">
+                            {cardType}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {validationErrors.cardNumber && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>{validationErrors.cardNumber}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -245,30 +388,52 @@ export default function PaymentPage() {
                         Expiry Date *
                       </label>
                       <input
+                        ref={cardExpiryRef}
                         type="text"
                         name="cardExpiry"
                         required
                         value={paymentState.cardExpiry}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        onChange={handleExpiryChange}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                          validationErrors.cardExpiry
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-border focus:ring-primary"
+                        }`}
                         placeholder="MM/YY"
                         maxLength={5}
                       />
+                      {validationErrors.cardExpiry && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{validationErrors.cardExpiry}</span>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         CVC *
                       </label>
                       <input
+                        ref={cardCVCRef}
                         type="text"
                         name="cardCVC"
                         required
                         value={paymentState.cardCVC}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="123"
-                        maxLength={3}
+                        onChange={handleCVCChange}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                          validationErrors.cardCVC
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-border focus:ring-primary"
+                        }`}
+                        placeholder={cardType === "amex" ? "1234" : "123"}
+                        maxLength={cardType === "amex" ? 4 : 3}
                       />
+                      {validationErrors.cardCVC && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{validationErrors.cardCVC}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
