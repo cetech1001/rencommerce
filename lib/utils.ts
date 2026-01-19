@@ -24,3 +24,11 @@ export const getMode = ({
   }
   return undefined;
 }
+
+export const convertToCrypto = (
+  usdAmount: number,
+  cryptoRate: number
+): number => {
+  if (cryptoRate === 0) return 0;
+  return usdAmount / cryptoRate;
+}

@@ -6,9 +6,13 @@ import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Lock, Copy, Check, Zap, DollarSign, Bitcoin, Loader2 } from "lucide-react";
 import { useCart } from "@/lib/contexts";
-import { getOrderByID } from "@/lib/queries/orders";
+import {
+  getOrderByID,
+  getCryptoRates,
+} from "@/lib/queries";
 import { processPayment } from "@/lib/actions/payment";
-import type { OrderDetail, PaymentFormState, PaymentMethod } from "@/lib/types";
+import type { OrderDetail, PaymentFormState, PaymentMethod, CryptoRate } from "@/lib/types";
+import { convertToCrypto } from "@/lib/utils";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -21,6 +25,7 @@ export default function PaymentPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cryptoRates, setCryptoRates] = useState<CryptoRate | null>(null);
 
   const [paymentState, setPaymentState] = useState<PaymentFormState>({
     method: "CARD",
@@ -28,25 +33,24 @@ export default function PaymentPage() {
     cardNumber: "",
     cardExpiry: "",
     cardCVC: "",
-    accountName: "",
-    accountNumber: "",
-    bankName: "",
-    routingNumber: "",
-    walletAddress: "",
     selectedCrypto: "bitcoin",
   });
-
-  // Crypto exchange rates (in a real app, these would be fetched from an API)
-  const cryptoRates: Record<string, number> = {
-    bitcoin: 42500,
-    ethereum: 2250,
-  };
 
   useEffect(() => {
     if (orderID) {
       fetchOrder();
+      fetchCryptoRates();
     }
   }, [orderID]);
+
+  const fetchCryptoRates = async () => {
+    try {
+      const rates = await getCryptoRates();
+      setCryptoRates(rates);
+    } catch (err) {
+      console.error("Failed to fetch crypto rates:", err);
+    }
+  };
 
   const fetchOrder = async () => {
     try {
@@ -83,30 +87,12 @@ export default function PaymentPage() {
     return true;
   };
 
-  const validateBankPayment = () => {
-    if (!paymentState.accountName || !paymentState.accountNumber || !paymentState.bankName || !paymentState.routingNumber) {
-      setError("Please fill in all bank transfer details.");
-      return false;
-    }
-    return true;
-  };
-
-  const validateCryptoPayment = () => {
-    if (!paymentState.walletAddress) {
-      setError("Please provide your wallet address.");
-      return false;
-    }
-    return true;
-  };
-
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     // Validate based on payment method
     if (paymentState.method === "CARD" && !validateCardPayment()) return;
-    if (paymentState.method === "BANK_TRANSFER" && !validateBankPayment()) return;
-    if (paymentState.method === "CRYPTO" && !validateCryptoPayment()) return;
 
     setIsProcessing(true);
 
@@ -115,10 +101,9 @@ export default function PaymentPage() {
       paymentMethod: paymentState.method,
       paymentInfo: {
         cardName: paymentState.cardName,
-        cardNumberLast4: paymentState.cardNumber.slice(-4),
-        accountName: paymentState.accountName,
-        bankName: paymentState.bankName,
-        walletAddress: paymentState.walletAddress,
+        cardNumber: paymentState.cardNumber,
+        cardCVC: paymentState.cardCVC,
+        cardExpiry: paymentState.cardExpiry,
         crypto: paymentState.selectedCrypto,
       },
     });
@@ -163,7 +148,14 @@ export default function PaymentPage() {
 
   const subtotal = order.totalAmount - (order.totalAmount * 0.1) - order.shippingFee;
   const tax = order.totalAmount * 0.1;
-  const cryptoAmount = order.totalAmount / cryptoRates[paymentState.selectedCrypto];
+
+  // Calculate crypto amount using real-time rates
+  const cryptoAmount = cryptoRates
+    ? convertToCrypto(
+        order.totalAmount,
+        paymentState.selectedCrypto === "bitcoin" ? cryptoRates.btc : cryptoRates.eth
+      )
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-8 sm:py-12">
@@ -298,67 +290,6 @@ export default function PaymentPage() {
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Your Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="accountName"
-                      required
-                      value={paymentState.accountName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Your Full Name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Your Bank Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="bankName"
-                      required
-                      value={paymentState.bankName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Chase Bank"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Routing Number *
-                      </label>
-                      <input
-                        type="text"
-                        name="routingNumber"
-                        required
-                        value={paymentState.routingNumber}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-                        placeholder="021000021"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Account Number *
-                      </label>
-                      <input
-                        type="text"
-                        name="accountNumber"
-                        required
-                        value={paymentState.accountNumber}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-                        placeholder="1234567890"
-                      />
-                    </div>
-                  </div>
-
                   <div className="mt-6 space-y-3 p-4 bg-muted rounded-lg">
                     <div>
                       <p className="text-xs text-muted-foreground font-medium mb-1">TRANSFER TO</p>
@@ -433,12 +364,21 @@ export default function PaymentPage() {
                   <div className="mt-6 space-y-4 p-4 bg-muted rounded-lg">
                     <div>
                       <p className="text-xs text-muted-foreground font-medium mb-2">SEND AMOUNT</p>
-                      <div className="text-2xl font-bold text-foreground">
-                        {cryptoAmount.toFixed(8)} {paymentState.selectedCrypto.toUpperCase()}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        ≈ ${order.totalAmount.toFixed(2)} USD
-                      </p>
+                      {cryptoRates ? (
+                        <>
+                          <div className="text-2xl font-bold text-foreground">
+                            {cryptoAmount.toFixed(8)} {paymentState.selectedCrypto === "bitcoin" ? "BTC" : "ETH"}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ≈ ${order.totalAmount.toFixed(2)} USD (1 {paymentState.selectedCrypto === "bitcoin" ? "BTC" : "ETH"} = ${paymentState.selectedCrypto === "bitcoin" ? cryptoRates.btc.toFixed(2) : cryptoRates.eth.toFixed(2)})
+                          </p>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Loading exchange rates...</span>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -469,21 +409,6 @@ export default function PaymentPage() {
                         </button>
                       </div>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Your Wallet Address (for confirmation) *
-                    </label>
-                    <input
-                      type="text"
-                      name="walletAddress"
-                      required
-                      value={paymentState.walletAddress}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
-                      placeholder="Your wallet address where you're sending from"
-                    />
                   </div>
                 </div>
               )}
@@ -558,9 +483,9 @@ export default function PaymentPage() {
                 <span className="text-xl font-bold text-primary">${order.totalAmount.toFixed(2)}</span>
               </div>
 
-              {paymentState.method === "CRYPTO" && (
+              {paymentState.method === "CRYPTO" && cryptoRates && (
                 <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-700 mb-4">
-                  {"You'll"} pay {cryptoAmount.toFixed(8)} {paymentState.selectedCrypto.toUpperCase()}
+                  {"You'll"} pay {cryptoAmount.toFixed(8)} {paymentState.selectedCrypto === "bitcoin" ? "BTC" : "ETH"}
                 </div>
               )}
 

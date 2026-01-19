@@ -1,3 +1,4 @@
+export * from './AdminSidebar';
 export * from './ArrayInput';
 export * from './FormSection';
 export * from './ImageCropper';
