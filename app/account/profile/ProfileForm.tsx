@@ -124,7 +124,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">Phone</p>
-                <p className="text-base font-medium text-foreground mt-1">{user.phone}</p>
+                <p className="text-base font-medium text-foreground mt-1">{user.phone || 'N/A'}</p>
               </div>
             </div>
 

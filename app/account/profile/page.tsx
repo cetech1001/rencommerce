@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { ProfileForm } from "@/lib/components/shared/ProfileForm";
+import { ProfileForm } from "./ProfileForm";
 import { getAuthSession } from "@/lib/actions/auth";
 import type { IUser } from "@/lib/types";
 import { getUserByID } from "@/lib/queries/user";
 
-export default function CustomerProfilePage() {
+export default function AccountProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
