@@ -9,6 +9,7 @@ import { ImageUpload } from "@/lib/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/lib/components/admin/MultiImageUpload";
 import { ArrayInput } from "@/lib/components/admin/ArrayInput";
 import { KeyValueInput } from "@/lib/components/admin/KeyValueInput";
+import { getProductByID } from "@/lib/queries";
 
 interface ProductFormProps {
   productID?: string;
@@ -27,8 +28,8 @@ export function ProductForm({ productID }: ProductFormProps) {
     category: "",
     rentalPrice: 0,
     purchasePrice: 0,
-    rentalSalePrice: null as number | null,
-    purchaseSalePrice: null as number | null,
+    rentalSalePrice: null as number | null | undefined,
+    purchaseSalePrice: null as number | null | undefined,
     quantity: 0,
     image: "",
     additionalImages: [] as string[],
@@ -45,24 +46,25 @@ export function ProductForm({ productID }: ProductFormProps) {
   const fetchProduct = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/products/${productID}`);
-      const data = await response.json();
-      if (data.product) {
-        setFormData({
-          name: data.product.name,
-          shortDescription: data.product.shortDescription,
-          longDescription: data.product.longDescription,
-          category: data.product.category,
-          rentalPrice: data.product.rentalPrice,
-          purchasePrice: data.product.purchasePrice,
-          rentalSalePrice: data.product.rentalSalePrice,
-          purchaseSalePrice: data.product.purchaseSalePrice,
-          quantity: data.product.quantity,
-          image: data.product.image,
-          additionalImages: data.product.additionalImages || [],
-          features: data.product.features || [],
-          specifications: data.product.specifications || {},
-        });
+      if (productID) {
+        const product = await getProductByID(productID);
+        if (product) {
+          setFormData({
+            name: product.name,
+            shortDescription: product.shortDescription,
+            longDescription: product.longDescription,
+            category: product.category,
+            rentalPrice: product.rentalPrice,
+            purchasePrice: product.purchasePrice,
+            rentalSalePrice: product.rentalSalePrice,
+            purchaseSalePrice: product.purchaseSalePrice,
+            quantity: product.quantity,
+            image: product.image,
+            additionalImages: product.additionalImages || [],
+            features: product.features || [],
+            specifications: product.specifications || {},
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to fetch product:", error);
@@ -78,23 +80,29 @@ export function ProductForm({ productID }: ProductFormProps) {
     setError("");
 
     try {
-      const url = productID
-        ? `/api/admin/products/${productID}`
-        : "/api/admin/products";
+      if (productID) {
+        // Update existing product
+        const { updateProduct } = await import("@/lib/actions/product");
+        const result = await updateProduct({
+          id: productID,
+          ...formData,
+        });
 
-      const method = productID ? "PUT" : "POST";
+        if (!result.success) {
+          setError(result.error || "Failed to update product");
+          setSaving(false);
+          return;
+        }
+      } else {
+        // Create new product
+        const { createProduct } = await import("@/lib/actions/product");
+        const result = await createProduct(formData);
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to save product");
-        return;
+        if (!result.success) {
+          setError(result.error || "Failed to create product");
+          setSaving(false);
+          return;
+        }
       }
 
       router.push("/admin/products");

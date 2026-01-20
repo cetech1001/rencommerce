@@ -5,13 +5,13 @@ import { requireAdmin } from "@/lib/actions/auth";
 import { OrderStatus } from "@/lib/prisma/enums";
 import { revalidatePath } from "next/cache";
 
-export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
+export async function updateOrderStatus(orderID: string, newStatus: OrderStatus) {
   await requireAdmin();
 
   try {
     // Get the current order with items
     const currentOrder = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderID },
       include: {
         orderItems: {
           include: {
@@ -56,12 +56,12 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 
     // Update the order status
     await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderID },
       data: { status: newStatus },
     });
 
     revalidatePath("/admin/orders");
-    revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath(`/admin/orders/${orderID}`);
 
     return { success: true };
   } catch (error) {

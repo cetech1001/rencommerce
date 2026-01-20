@@ -54,6 +54,20 @@ export async function updateUser(data: UpdateUserData) {
   try {
     const { id, ...updateData } = data;
 
+    // Check if email is being updated and if it's unique
+    if (updateData.email) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          email: updateData.email,
+          NOT: { id },
+        },
+      });
+
+      if (existingUser) {
+        return { success: false, error: "A user with this email already exists" };
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id },
       data: updateData,

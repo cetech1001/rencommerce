@@ -144,11 +144,8 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              disabled={!!user}
-              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted disabled:cursor-not-allowed"
-              title={user ? "Email cannot be changed" : ""}
+              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
-            {user && <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>}
           </div>
 
           <div>

@@ -4,28 +4,30 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Package, Calendar, DollarSign, Loader2 } from "lucide-react";
+import { ArrowLeft, Package, DollarSign, Loader2 } from "lucide-react";
 import { getOrderByID } from "@/lib/queries/orders";
 import type { OrderDetail } from "@/lib/types";
 import { OrderStatus, OrderType } from "@/lib/prisma/enums";
+import { Toast, type ToastType } from "@/lib/components/Toast";
 
 export default function AdminOrderDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const orderId = params.id as string;
+  const orderID = params.id as string;
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [newStatus, setNewStatus] = useState<OrderStatus | "">("");
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
     fetchOrder();
-  }, [orderId]);
+  }, [orderID]);
 
   const fetchOrder = async () => {
     try {
-      const data = await getOrderByID(orderId);
+      const data = await getOrderByID(orderID);
       setOrder(data);
       if (data) {
         setNewStatus(data.status);
@@ -43,17 +45,17 @@ export default function AdminOrderDetailsPage() {
     setUpdating(true);
     try {
       const { updateOrderStatus } = await import("@/lib/actions/order");
-      const result = await updateOrderStatus(orderId, newStatus);
+      const result = await updateOrderStatus(orderID, newStatus);
 
       if (result.success) {
         await fetchOrder();
-        alert("Order status updated successfully");
+        setToast({ message: "Order status updated successfully", type: "success" });
       } else {
-        alert(result.error || "Failed to update order status");
+        setToast({ message: result.error || "Failed to update order status", type: "error" });
       }
     } catch (error) {
       console.error("Failed to update order status:", error);
-      alert("Failed to update order status");
+      setToast({ message: "Failed to update order status", type: "error" });
     } finally {
       setUpdating(false);
     }
@@ -145,7 +147,8 @@ export default function AdminOrderDetailsPage() {
               >
                 <option value={OrderStatus.PENDING}>Pending</option>
                 <option value={OrderStatus.PROCESSING}>Processing</option>
-                <option value={OrderStatus.COMPLETED}>Completed</option>
+                <option value={OrderStatus.SHIPPED}>Shipped</option>
+                <option value={OrderStatus.DELIVERED}>Delivered</option>
                 <option value={OrderStatus.CANCELLED}>Cancelled</option>
               </select>
               <button
@@ -236,6 +239,14 @@ export default function AdminOrderDetailsPage() {
           </div>
         </div>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

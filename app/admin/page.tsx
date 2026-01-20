@@ -1,19 +1,59 @@
-import { Users, Package, ShoppingCart, CreditCard } from "lucide-react";
+import { Users, Package, ShoppingCart, CreditCard, TrendingUp, TrendingDown } from "lucide-react";
+import { getDashboardStats } from "@/lib/queries/analytics";
+import { getOrders } from "@/lib/queries/orders";
+import Link from "next/link";
 
-export default function AdminDashboard() {
-  const stats = [
-    { label: "Total Users", value: "2,847", icon: Users, trend: "+12%" },
-    { label: "Products", value: "156", icon: Package, trend: "+8" },
-    { label: "Active Orders", value: "342", icon: ShoppingCart, trend: "+45%" },
-    { label: "Total Revenue", value: "$89.2K", icon: CreditCard, trend: "+23%" },
+export default async function AdminDashboard() {
+  const stats = await getDashboardStats();
+  const { data: recentOrders } = await getOrders({
+    isAdmin: true,
+    page: 1,
+    limit: 5,
+    orderBy: "createdAt",
+    sortOrder: "desc",
+  });
+
+  const statCards = [
+    {
+      label: "Total Revenue",
+      value: `$${stats.totalRevenue.toLocaleString()}`,
+      icon: CreditCard,
+      trend: stats.revenueChange,
+    },
+    {
+      label: "Total Orders",
+      value: stats.totalOrders.toString(),
+      icon: ShoppingCart,
+      trend: stats.ordersChange,
+    },
+    {
+      label: "Products",
+      value: stats.totalProducts.toString(),
+      icon: Package,
+      trend: stats.productsChange,
+    },
+    {
+      label: "Total Users",
+      value: stats.totalUsers.toString(),
+      icon: Users,
+      trend: stats.usersChange,
+    },
   ];
 
-  const recentOrders = [
-    { id: "ORD-001", customer: "Sarah Johnson", product: "Solar Panel Kit", amount: "$1,299", status: "Completed" },
-    { id: "ORD-002", customer: "Mike Chen", product: "Battery System", amount: "$5,499", status: "Processing" },
-    { id: "ORD-003", customer: "Emma Rodriguez", product: "Wind Turbine", amount: "$12,999", status: "Pending" },
-    { id: "ORD-004", customer: "John Smith", product: "Inverter", amount: "$2,899", status: "Completed" },
-  ];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-700";
+      case "PROCESSING":
+        return "bg-blue-100 text-blue-700";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700";
+      case "CANCELLED":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
 
   return (
     <div className="p-8">
@@ -31,8 +71,10 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {stats.map((stat, idx) => {
+            {statCards.map((stat, idx) => {
               const Icon = stat.icon;
+              const isPositive = stat.trend >= 0;
+              const TrendIcon = isPositive ? TrendingUp : TrendingDown;
               return (
                 <div
                   key={idx}
@@ -42,9 +84,14 @@ export default function AdminDashboard() {
                     <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
                       <Icon className="w-5 h-5 text-primary" />
                     </div>
-                    <span className="text-xs font-semibold text-accent bg-accent/10 px-2.5 py-1 rounded-full">
-                      {stat.trend}
-                    </span>
+                    {stat.trend !== 0 && (
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                        isPositive ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"
+                      }`}>
+                        <TrendIcon className="w-3 h-3" />
+                        {Math.abs(stat.trend)}%
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-sm text-muted-foreground mb-1">
                     {stat.label}
@@ -91,38 +138,40 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {recentOrders.map((order) => (
-                      <tr
-                        key={order.id}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-foreground">
-                          {order.id}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {order.customer}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {order.product}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-foreground">
-                          {order.amount}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              order.status === "Completed"
-                                ? "bg-accent/20 text-accent"
-                                : order.status === "Processing"
-                                  ? "bg-primary/20 text-primary"
-                                  : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
+                    {recentOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-sm text-muted-foreground">
+                          No orders yet
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      recentOrders.map((order) => (
+                        <tr
+                          key={order.id}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-6 py-4 text-sm font-medium text-foreground">
+                            <Link href={`/admin/orders/${order.id}`} className="hover:text-primary">
+                              #{order.id.slice(0, 8)}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-muted-foreground">
+                            {order.userName}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-muted-foreground">
+                            {order.type}
+                          </td>
+                          <td className="px-6 py-4 text-sm font-medium text-foreground">
+                            ${order.totalAmount.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
