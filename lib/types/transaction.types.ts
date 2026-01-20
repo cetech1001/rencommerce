@@ -1,4 +1,4 @@
-import type { TransactionStatus as PrismaTransactionStatus } from "@prisma/client";
+import type { TransactionStatus as PrismaTransactionStatus } from "../prisma/enums";
 
 export type TransactionStatus = PrismaTransactionStatus;
 
@@ -22,7 +22,7 @@ export interface TransactionDetail {
   amount: number;
   status: TransactionStatus;
   paymentMethod: string;
-  paymentInfo: Record<string, any>;
+  paymentInfo: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }

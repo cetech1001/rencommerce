@@ -1,4 +1,4 @@
-import type { OrderStatus as PrismaOrderStatus, OrderType as PrismaOrderType } from "@prisma/client";
+import type { OrderStatus as PrismaOrderStatus, OrderType as PrismaOrderType } from "../prisma/enums";
 
 export type OrderStatus = PrismaOrderStatus;
 export type OrderType = PrismaOrderType;
