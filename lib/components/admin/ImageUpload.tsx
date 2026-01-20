@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Crop } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { ImageCropper } from "./ImageCropper";
+import { useToast } from "@/lib/contexts";
 
 interface ImageUploadProps {
   value: string;
@@ -17,6 +18,7 @@ export function ImageUpload({ value, onChange, label, required = false }: ImageU
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -42,12 +44,13 @@ export function ImageUpload({ value, onChange, label, required = false }: ImageU
 
       if (result.success && result.url) {
         onChange(result.url);
+        showToast("Image uploaded", "success");
       } else {
-        alert(result.error || "Failed to upload image");
+        showToast(result.error || "Failed to upload image", "error");
       }
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Failed to upload image");
+      showToast("Failed to upload image", "error");
     } finally {
       setUploading(false);
       setShowCropper(false);
