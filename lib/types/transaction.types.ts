@@ -4,8 +4,8 @@ export type TransactionStatus = PrismaTransactionStatus;
 
 export interface TransactionListItem {
   id: string;
-  orderId: string;
-  userId: string;
+  orderID: string;
+  userID: string;
   userName: string;
   amount: number;
   status: TransactionStatus;
@@ -15,8 +15,8 @@ export interface TransactionListItem {
 
 export interface TransactionDetail {
   id: string;
-  orderId: string;
-  userId: string;
+  orderID: string;
+  userID: string;
   userName: string;
   userEmail: string;
   amount: number;

@@ -28,8 +28,8 @@ export async function getAllTransactions(): Promise<TransactionListItem[]> {
 
     const formattedTransactions: TransactionListItem[] = transactions.map((transaction) => ({
       id: transaction.id,
-      orderId: transaction.orderID,
-      userId: transaction.order.userID,
+      orderID: transaction.orderID,
+      userID: transaction.order.userID,
       userName: transaction.order.user.name,
       amount: transaction.amount,
       status: transaction.status,
@@ -70,14 +70,14 @@ export async function getTransactionByID(transactionID: string): Promise<Transac
 
     return {
       id: transaction.id,
-      orderId: transaction.orderID,
-      userId: transaction.order.userID,
+      orderID: transaction.orderID,
+      userID: transaction.order.userID,
       userName: transaction.order.user.name,
       userEmail: transaction.order.user.email,
       amount: transaction.amount,
       status: transaction.status,
       paymentMethod: transaction.paymentMethod,
-      paymentInfo: transaction.paymentInfo as Record<string, any>,
+      paymentInfo: transaction.paymentInfo as Record<string, string>,
       createdAt: transaction.createdAt.toISOString(),
       updatedAt: transaction.updatedAt.toISOString(),
     };

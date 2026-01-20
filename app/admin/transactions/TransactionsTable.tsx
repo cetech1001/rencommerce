@@ -123,7 +123,7 @@ export function TransactionsTable() {
                     #{transaction.id.slice(0, 8)}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">
-                    #{transaction.orderId.slice(0, 8)}
+                    #{transaction.orderID.slice(0, 8)}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">
                     {transaction.userName}

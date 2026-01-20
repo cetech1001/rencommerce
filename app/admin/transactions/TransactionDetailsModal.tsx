@@ -135,10 +135,10 @@ export function TransactionDetailsModal({ transactionID, onClose, onStatusUpdate
                   Order ID
                 </label>
                 <Link
-                  href={`/admin/orders/${transaction.orderId}`}
+                  href={`/admin/orders/${transaction.orderID}`}
                   className="text-sm font-mono bg-muted px-3 py-2 rounded block hover:bg-muted/80 text-primary"
                 >
-                  {transaction.orderId}
+                  {transaction.orderID}
                 </Link>
               </div>
               <div>
