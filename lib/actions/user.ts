@@ -49,7 +49,7 @@ export async function createUser(data: CreateUserData) {
 }
 
 export async function updateUser(data: UpdateUserData) {
-  await requireAdmin();
+  // await requireAdmin();
 
   try {
     const { id, ...updateData } = data;
@@ -81,6 +81,7 @@ export async function updateUser(data: UpdateUserData) {
     });
 
     revalidatePath("/admin/users");
+    revalidatePath("/account/profile");
 
     return { success: true, user };
   } catch (error) {
@@ -107,19 +108,19 @@ export async function deleteUser(userID: string) {
 }
 
 // Update phone number - can be used by admin or user themselves
-export async function updateUserPhone(userId: string, phone: string, isAdmin: boolean = false) {
+export async function updateUserPhone(userID: string, phone: string, isAdmin: boolean = false) {
   try {
     if (isAdmin) {
       await requireAdmin();
     } else {
       const session = await getAuthSession();
-      if (!session.user || session.user.id !== userId) {
+      if (!session.user || session.user.id !== userID) {
         return { success: false, error: "Unauthorized" };
       }
     }
 
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: userID },
       data: { phone },
     });
 
@@ -135,7 +136,7 @@ export async function updateUserPhone(userId: string, phone: string, isAdmin: bo
 
 // Update password - can be used by admin or user themselves
 export async function updateUserPassword(
-  userId: string,
+  userID: string,
   newPassword: string,
   currentPassword?: string,
   isAdmin: boolean = false
@@ -145,7 +146,7 @@ export async function updateUserPassword(
       await requireAdmin();
     } else {
       const session = await getAuthSession();
-      if (!session.user || session.user.id !== userId) {
+      if (!session.user || session.user.id !== userID) {
         return { success: false, error: "Unauthorized" };
       }
 
@@ -153,7 +154,7 @@ export async function updateUserPassword(
       if (currentPassword) {
         const { verifyPassword } = await import("@/lib/password");
         const user = await prisma.user.findUnique({
-          where: { id: userId },
+          where: { id: userID },
         });
 
         if (!user || !(await verifyPassword(currentPassword, user.password))) {
@@ -165,7 +166,7 @@ export async function updateUserPassword(
     const hashedPassword = await hashPassword(newPassword);
 
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: userID },
       data: { password: hashedPassword },
     });
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { User, Mail, Calendar, Shield, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { User, Mail, Calendar, Shield, Phone, Eye, EyeOff } from "lucide-react";
 import type { IUser } from "@/lib/types";
+import { Toast, ToastType } from "@/lib/components/client";
 
 interface ProfileFormProps {
   user: IUser;
@@ -10,6 +11,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
+  const [newUser, setNewUser] = useState<IUser>();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,29 +30,62 @@ export function ProfileForm({ user }: ProfileFormProps) {
     confirm: false,
   });
   const [updating, setUpdating] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchUser();
+    }
+  }, [user]);
+
+  const fetchUser = async () => {
+    const { getUserByID } = await import("@/lib/queries");
+    const data = await getUserByID(user.id);
+    if (data) {
+      console.log("Fetched data: ", data);
+      setNewUser(data);
+    }
+  }
+
+  useEffect(() => {
+    if (newUser) {
+      setFormData({
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone || "",
+      });
+    }
+  }, [newUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
 
     try {
-      // Update phone number if changed
-      if (formData.phone !== (user.phone || "")) {
-        const { updateUserPhone } = await import("@/lib/actions/user");
-        const result = await updateUserPhone(user.id, formData.phone);
-        if (!result.success) {
-          alert(result.error || "Failed to update phone");
-          setUpdating(false);
-          return;
-        }
+      const { updateUser } = await import("@/lib/actions");
+
+      const result = await updateUser({
+        id: user.id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone === '' ? undefined : formData.phone,
+      });
+
+      if (!result.success) {
+        setToast({ message: result.error || "Failed to update phone", type: 'error' });
+        setUpdating(false);
+        return;
       }
 
-      alert("Profile updated successfully!");
+      setToast({ message: "Profile updated successfully!", type: "success" });
       setIsEditing(false);
-      window.location.reload();
+      const timeoutID = setTimeout(() => {
+        window.location.reload();
+        clearTimeout(timeoutID);
+      }, 1500);
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile");
+      setToast({ message: "Failed to update profile", type: 'error' });
     } finally {
       setUpdating(false);
     }
@@ -60,19 +95,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
     e.preventDefault();
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords do not match");
+      setToast({ message: "New passwords do not match", type: 'error' });
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      alert("Password must be at least 6 characters long");
+      setToast({ message: "Password must be at least 6 characters long", type: 'error' });
       return;
     }
 
     setUpdating(true);
 
     try {
-      const { updateUserPassword } = await import("@/lib/actions/user");
+      const { updateUserPassword } = await import("@/lib/actions");
       const result = await updateUserPassword(
         user.id,
         passwordData.newPassword,
@@ -80,7 +115,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       );
 
       if (result.success) {
-        alert("Password updated successfully!");
+        setToast({ message: "Password updated successfully!", type: "success" });
         setPasswordData({
           currentPassword: "",
           newPassword: "",
@@ -88,11 +123,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
         });
         setIsChangingPassword(false);
       } else {
-        alert(result.error || "Failed to update password");
+        setToast({ message: result.error || "Failed to update password", type: 'error' });
       }
     } catch (error) {
       console.error("Error updating password:", error);
-      alert("Failed to update password");
+      setToast({ message: "Failed to update password", type: 'error' });
     } finally {
       setUpdating(false);
     }
@@ -146,10 +181,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                disabled
-                title="Email cannot be changed"
+                required
+                // disabled
+                // title="Email cannot be changed"
               />
-              <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+              {/* <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p> */}
             </div>
 
             <div>
@@ -399,6 +435,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
             )}
           </div>
         </div>
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

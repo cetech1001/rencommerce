@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createSession, deleteSessionCookie, getCurrentUser } from "@/lib/session";
 import { redirect } from "next/navigation";
-import type { ActionResponse, AuthUser, LoginCredentials, RegisterData } from "@/lib/types";
+import type { ActionResponse, AuthUser, RegisterData } from "@/lib/types";
 
 export async function register(data: RegisterData) {
   try {

@@ -8,7 +8,7 @@ import { ArrowLeft, Package, DollarSign, Loader2 } from "lucide-react";
 import { getOrderByID } from "@/lib/queries/orders";
 import type { OrderDetail } from "@/lib/types";
 import { OrderStatus, OrderType } from "@/lib/prisma/enums";
-import { Toast, type ToastType } from "@/lib/components/Toast";
+import { Toast, type ToastType } from "@/lib/components/client";
 
 export default function AdminOrderDetailsPage() {
   const router = useRouter();

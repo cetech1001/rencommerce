@@ -5,7 +5,7 @@ import { X, Loader2 } from "lucide-react";
 import { getTransactionByID } from "@/lib/queries/transaction";
 import type { TransactionDetail } from "@/lib/types";
 import { TransactionStatus } from "@/lib/prisma/enums";
-import { Toast, type ToastType } from "@/lib/components/Toast";
+import { Toast, type ToastType } from "@/lib/components/client";
 import Link from "next/link";
 
 interface TransactionDetailsModalProps {
