@@ -12,7 +12,7 @@ export function ProductsTable() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState(PRODUCT_ORDER_BY.CREATED_AT);
+  const [sortField, setSortField] = useState<PRODUCT_ORDER_BY>(PRODUCT_ORDER_BY.CREATED_AT);
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1,
@@ -47,7 +47,7 @@ export function ProductsTable() {
     }
   };
 
-  const handleSort = (field: string) => {
+  const handleSort = (field: PRODUCT_ORDER_BY) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {

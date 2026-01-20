@@ -96,6 +96,7 @@ export const PRODUCT_ORDER_BY = {
   PURCHASE_PRICE: 'purchasePrice',
   NAME: 'name',
   CREATED_AT: 'createdAt',
+  QUANTITY: 'quantity',
 } as const;
 export type PRODUCT_ORDER_BY = typeof PRODUCT_ORDER_BY[keyof typeof PRODUCT_ORDER_BY];
 
