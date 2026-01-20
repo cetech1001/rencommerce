@@ -12,3 +12,17 @@ export interface TransactionListItem {
   paymentMethod: string;
   transactionDate: string;
 }
+
+export interface TransactionDetail {
+  id: string;
+  orderId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  amount: number;
+  status: TransactionStatus;
+  paymentMethod: string;
+  paymentInfo: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Eye } from "lucide-react";
 import type { TransactionListItem, TransactionStatus } from "@/lib/types";
+import { TransactionDetailsModal } from "./TransactionDetailsModal";
 
 type TransactionFilter = "ALL" | TransactionStatus;
 
@@ -9,6 +11,7 @@ export function TransactionsTable() {
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<TransactionFilter>("ALL");
+  const [selectedTransactionID, setSelectedTransactionID] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTransactions();
@@ -97,12 +100,15 @@ export function TransactionsTable() {
               <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
                 Date
               </th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                <td colSpan={8} className="text-center py-8 text-muted-foreground">
                   No transactions found
                 </td>
               </tr>
@@ -136,12 +142,28 @@ export function TransactionsTable() {
                   <td className="px-6 py-4 text-sm text-muted-foreground">
                     {new Date(transaction.transactionDate).toLocaleString()}
                   </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => setSelectedTransactionID(transaction.id)}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
+                      title="View details"
+                    >
+                      <Eye className="w-4 h-4 text-primary" />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {selectedTransactionID && (
+        <TransactionDetailsModal
+          transactionID={selectedTransactionID}
+          onClose={() => setSelectedTransactionID(null)}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/actions/auth";
-import type { TransactionListItem } from "@/lib/types";
+import type { TransactionListItem, TransactionDetail } from "@/lib/types";
 
 export async function getAllTransactions(): Promise<TransactionListItem[]> {
   await requireAdmin();
@@ -41,5 +41,48 @@ export async function getAllTransactions(): Promise<TransactionListItem[]> {
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];
+  }
+}
+
+export async function getTransactionByID(transactionID: string): Promise<TransactionDetail | null> {
+  await requireAdmin();
+
+  try {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionID },
+      include: {
+        order: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!transaction) {
+      return null;
+    }
+
+    return {
+      id: transaction.id,
+      orderId: transaction.orderID,
+      userId: transaction.order.userID,
+      userName: transaction.order.user.name,
+      userEmail: transaction.order.user.email,
+      amount: transaction.amount,
+      status: transaction.status,
+      paymentMethod: transaction.paymentMethod,
+      paymentInfo: transaction.paymentInfo as Record<string, any>,
+      createdAt: transaction.createdAt.toISOString(),
+      updatedAt: transaction.updatedAt.toISOString(),
+    };
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    return null;
   }
 }
