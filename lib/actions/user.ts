@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "./auth";
+import { requireAdmin, getAuthSession } from "./auth";
 import type { CreateUserData, UpdateUserData } from "@/lib/types";
 
 export async function createUser(data: CreateUserData) {
@@ -89,5 +89,78 @@ export async function deleteUser(userID: string) {
   } catch (error) {
     console.error("Error deleting user:", error);
     return { success: false, error: "Failed to delete user" };
+  }
+}
+
+// Update phone number - can be used by admin or user themselves
+export async function updateUserPhone(userId: string, phone: string, isAdmin: boolean = false) {
+  try {
+    if (isAdmin) {
+      await requireAdmin();
+    } else {
+      const session = await getAuthSession();
+      if (!session.user || session.user.id !== userId) {
+        return { success: false, error: "Unauthorized" };
+      }
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { phone },
+    });
+
+    revalidatePath("/admin/users");
+    revalidatePath("/account/profile");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating phone:", error);
+    return { success: false, error: "Failed to update phone number" };
+  }
+}
+
+// Update password - can be used by admin or user themselves
+export async function updateUserPassword(
+  userId: string,
+  newPassword: string,
+  currentPassword?: string,
+  isAdmin: boolean = false
+) {
+  try {
+    if (isAdmin) {
+      await requireAdmin();
+    } else {
+      const session = await getAuthSession();
+      if (!session.user || session.user.id !== userId) {
+        return { success: false, error: "Unauthorized" };
+      }
+
+      // For non-admin users, verify current password
+      if (currentPassword) {
+        const { verifyPassword } = await import("@/lib/password");
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+        });
+
+        if (!user || !(await verifyPassword(currentPassword, user.password))) {
+          return { success: false, error: "Current password is incorrect" };
+        }
+      }
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    revalidatePath("/admin/users");
+    revalidatePath("/account/profile");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return { success: false, error: "Failed to update password" };
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import type { IUser } from "@/lib/types";
 
 interface UserFormModalProps {
@@ -14,8 +14,10 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
     name: user?.name || "",
     email: user?.email || "",
     role: user?.role || "CUSTOMER",
+    phone: user?.phone || "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,29 +27,71 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
     setError("");
 
     try {
-      const url = user
-        ? `/api/admin/users/${user.id}`
-        : "/api/admin/users";
+      if (user) {
+        // Update existing user
+        const { updateUser, updateUserPhone, updateUserPassword } = await import("@/lib/actions/user");
 
-      const method = user ? "PUT" : "POST";
+        // Update basic info if changed
+        if (formData.name !== user.name || formData.email !== user.email || formData.role !== user.role) {
+          const result = await updateUser({
+            id: user.id,
+            name: formData.name,
+            email: formData.email,
+            role: formData.role as "ADMIN" | "CUSTOMER",
+          });
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+          if (!result.success) {
+            setError(result.error || "Failed to update user");
+            setLoading(false);
+            return;
+          }
+        }
 
-      const data = await response.json();
+        // Update phone if changed
+        if (formData.phone !== (user.phone || "")) {
+          const result = await updateUserPhone(user.id, formData.phone, true);
+          if (!result.success) {
+            setError(result.error || "Failed to update phone");
+            setLoading(false);
+            return;
+          }
+        }
 
-      if (!response.ok) {
-        setError(data.error || "Failed to save user");
-        return;
+        // Update password if provided
+        if (formData.password) {
+          const result = await updateUserPassword(user.id, formData.password, undefined, true);
+          if (!result.success) {
+            setError(result.error || "Failed to update password");
+            setLoading(false);
+            return;
+          }
+        }
+      } else {
+        // Create new user
+        const { createUser } = await import("@/lib/actions/user");
+        const result = await createUser({
+          name: formData.name,
+          email: formData.email,
+          role: formData.role as "ADMIN" | "CUSTOMER",
+          password: formData.password,
+        });
+
+        if (!result.success) {
+          setError(result.error || "Failed to create user");
+          setLoading(false);
+          return;
+        }
+
+        // Add phone if provided
+        if (formData.phone && result.user) {
+          const { updateUserPhone } = await import("@/lib/actions/user");
+          await updateUserPhone(result.user.id, formData.phone, true);
+        }
       }
 
       onClose();
     } catch (err) {
       setError("Failed to save user");
-    } finally {
       setLoading(false);
     }
   };
@@ -100,26 +144,57 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
+              disabled={!!user}
+              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted disabled:cursor-not-allowed"
+              title={user ? "Email cannot be changed" : ""}
+            />
+            {user && <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Phone {!user && <span className="text-muted-foreground">(Optional)</span>}
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
               className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Enter phone number"
             />
           </div>
 
-          {!user && (
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Password
-              </label>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Password {user && <span className="text-muted-foreground">(Leave blank to keep current)</span>}
+            </label>
+            <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required={!user}
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2 pr-10 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                minLength={6}
+                placeholder={user ? "Enter new password" : "Enter password"}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
-          )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">

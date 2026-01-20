@@ -4,21 +4,31 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Loader2, Package, Calendar, DollarSign, ShoppingBag } from "lucide-react";
+import { Loader2, Package, Calendar, DollarSign, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { getAuthSession } from "@/lib/actions/auth";
-import { getUserOrders } from "@/lib/queries/orders";
-import type { OrderDetail } from "@/lib/types";
+import { getOrders, getOrderByID } from "@/lib/queries/orders";
+import type { OrderListItem, OrderDetail, PaginationMeta } from "@/lib/types";
 import { OrderType } from "@/lib/prisma/enums";
 
 export default function CustomerOrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<OrderDetail[]>([]);
+  const [ordersList, setOrdersList] = useState<OrderListItem[]>([]);
+  const [ordersDetails, setOrdersDetails] = useState<Map<string, OrderDetail>>(new Map());
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    totalCount: 0,
+    totalPages: 0,
+    itemsCount: 0,
+  });
+
+  const itemsPerPage = 3;
 
   useEffect(() => {
     checkAuthAndFetchOrders();
-  }, []);
+  }, [currentPage]);
 
   const checkAuthAndFetchOrders = async () => {
     try {
@@ -30,17 +40,37 @@ export default function CustomerOrdersPage() {
       }
 
       setAuthorized(true);
-      await fetchOrders();
+      await fetchOrders(session.user.id);
     } catch (error) {
       console.error("Failed to verify authentication:", error);
       router.push("/login");
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (userId: string) => {
     try {
-      const data = await getUserOrders();
-      setOrders(data);
+      const { data, meta } = await getOrders({
+        userId,
+        page: currentPage,
+        limit: itemsPerPage,
+        orderBy: "createdAt",
+        sortOrder: "desc",
+      });
+
+      setOrdersList(data);
+      setPagination(meta);
+
+      // Fetch details for each order
+      const detailsMap = new Map<string, OrderDetail>();
+      await Promise.all(
+        data.map(async (order) => {
+          const details = await getOrderByID(order.id);
+          if (details) {
+            detailsMap.set(order.id, details);
+          }
+        })
+      );
+      setOrdersDetails(detailsMap);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
     } finally {
@@ -81,7 +111,7 @@ export default function CustomerOrdersPage() {
           </p>
         </div>
 
-        {orders.length === 0 ? (
+        {ordersList.length === 0 ? (
           <div className="bg-white rounded-xl border border-border p-12 text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
             <h2 className="text-xl font-semibold text-foreground mb-2">No orders yet</h2>
@@ -96,8 +126,13 @@ export default function CustomerOrdersPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
-            {orders.map((order) => (
+          <>
+            <div className="space-y-6">
+              {ordersList.map((order) => {
+                const orderDetails = ordersDetails.get(order.id);
+                if (!orderDetails) return null;
+
+                return (
               <div
                 key={order.id}
                 className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow"
@@ -151,7 +186,7 @@ export default function CustomerOrdersPage() {
                 {/* Order Items */}
                 <div className="p-4 sm:p-6">
                   <div className="space-y-4">
-                    {order.orderItems.map((item) => (
+                    {orderDetails.orderItems.map((item) => (
                       <div key={item.id} className="flex gap-4">
                         <Link
                           href={`/product/${item.product.id}`}
@@ -205,21 +240,78 @@ export default function CustomerOrdersPage() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Package className="w-4 h-4" />
-                        <span>{order.orderItems.length} item(s)</span>
+                        <span>{orderDetails.orderItems.length} item(s)</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Shipping:</span>
                         <span className="font-medium">
-                          {order.shippingFee > 0 ? `$${order.shippingFee.toFixed(2)}` : "Free"}
+                          {orderDetails.shippingFee > 0 ? `$${orderDetails.shippingFee.toFixed(2)}` : "Free"}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary flex items-center gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+
+                <div className="flex gap-2">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${
+                          currentPage === pageNum
+                            ? "bg-primary text-white"
+                            : "border border-border hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={currentPage === pagination.totalPages}
+                  className="px-4 py-2 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary flex items-center gap-2"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              Showing {pagination.itemsCount} of {pagination.totalCount} orders
+            </div>
+          </>
         )}
       </div>
     </div>

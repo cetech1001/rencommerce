@@ -1,30 +1,62 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye } from "lucide-react";
-import type { OrderListItem, OrderStatus } from "@/lib/types";
+import { Eye, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import type { OrderListItem, OrderStatus, PaginationMeta } from "@/lib/types";
 
 type OrderFilter = "ALL" | OrderStatus;
+type SortField = "createdAt" | "totalAmount";
+type SortOrder = "asc" | "desc";
 
 export function OrdersTable() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderFilter>("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>("createdAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    totalCount: 0,
+    totalPages: 0,
+    itemsCount: 0,
+  });
+
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [currentPage, sortField, sortOrder]);
 
   const fetchOrders = async () => {
     try {
-      const { getAllOrders } = await import("@/lib/queries/orders");
-      const data = await getAllOrders();
+      const { getOrders } = await import("@/lib/queries/orders");
+      const { data, meta } = await getOrders({
+        isAdmin: true,
+        page: currentPage,
+        limit: itemsPerPage,
+        orderBy: sortField,
+        sortOrder,
+      });
       setOrders(data || []);
+      setPagination(meta);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
+    }
+    setCurrentPage(1);
   };
 
   const filteredOrders = filter === "ALL"
@@ -89,13 +121,25 @@ export function OrdersTable() {
                 Type
               </th>
               <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                Total Amount
+                <button
+                  onClick={() => handleSort("totalAmount")}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  Total Amount
+                  <ArrowUpDown className="w-4 h-4" />
+                </button>
               </th>
               <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
                 Status
               </th>
               <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                Order Date
+                <button
+                  onClick={() => handleSort("createdAt")}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  Order Date
+                  <ArrowUpDown className="w-4 h-4" />
+                </button>
               </th>
               <th className="text-right px-6 py-3 text-sm font-medium text-foreground">
                 Actions
@@ -146,6 +190,7 @@ export function OrdersTable() {
                   </td>
                   <td className="px-6 py-4 text-sm text-right">
                     <button
+                      onClick={() => router.push(`/admin/orders/${order.id}`)}
                       className="p-2 hover:bg-muted rounded-lg transition-colors"
                       title="View details"
                     >
@@ -158,6 +203,64 @@ export function OrdersTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="p-4 border-t border-border">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {pagination.itemsCount} of {pagination.totalCount} orders
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (pagination.totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= pagination.totalPages - 2) {
+                    pageNum = pagination.totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg font-medium text-sm transition-all duration-200 ${
+                        currentPage === pageNum
+                          ? "bg-primary text-white"
+                          : "border border-border hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+                disabled={currentPage === pagination.totalPages}
+                className="px-3 py-1 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary flex items-center gap-1"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

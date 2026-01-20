@@ -1,29 +1,60 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
-import type { IProduct } from "@/lib/types";
+import type { IProduct, PaginationMeta } from "@/lib/types";
+import { PRODUCT_ORDER_BY } from "@/lib/types";
+
+type SortOrder = "asc" | "desc";
+
 export function ProductsTable() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState(PRODUCT_ORDER_BY.CREATED_AT);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    totalCount: 0,
+    totalPages: 0,
+    itemsCount: 0,
+  });
+
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [currentPage, sortField, sortOrder]);
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
       const { getProducts } = await import("@/lib/queries/products");
       const { data, meta } = await getProducts({
-        limit: 10
+        page: currentPage,
+        limit: itemsPerPage,
+        orderBy: sortField,
+        sortOrder,
+        isActive: undefined,
       });
       setProducts(data);
+      setPagination(meta);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
+    }
+    setCurrentPage(1);
   };
 
   const handleDelete = async (productId: string) => {
@@ -34,7 +65,7 @@ export function ProductsTable() {
       const result = await deleteProduct(productId);
 
       if (result.success) {
-        setProducts(products.filter((p) => p.id !== productId));
+        await fetchProducts();
       } else {
         alert(result.error || "Failed to delete product");
       }
@@ -66,22 +97,52 @@ export function ProductsTable() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                  Name
+                  <button
+                    onClick={() => handleSort(PRODUCT_ORDER_BY.NAME)}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    Name
+                    <ArrowUpDown className="w-4 h-4" />
+                  </button>
                 </th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
                   Category
                 </th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                  Rent Price
+                  <button
+                    onClick={() => handleSort(PRODUCT_ORDER_BY.RENTAL_PRICE)}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    Rent Price
+                    <ArrowUpDown className="w-4 h-4" />
+                  </button>
                 </th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                  Purchase Price
+                  <button
+                    onClick={() => handleSort(PRODUCT_ORDER_BY.PURCHASE_PRICE)}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    Purchase Price
+                    <ArrowUpDown className="w-4 h-4" />
+                  </button>
                 </th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                  Stock
+                  <button
+                    onClick={() => handleSort(PRODUCT_ORDER_BY.QUANTITY)}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    Stock
+                    <ArrowUpDown className="w-4 h-4" />
+                  </button>
                 </th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-foreground">
-                  Added On
+                  <button
+                    onClick={() => handleSort(PRODUCT_ORDER_BY.CREATED_AT)}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    Added On
+                    <ArrowUpDown className="w-4 h-4" />
+                  </button>
                 </th>
                 <th className="text-right px-6 py-3 text-sm font-medium text-foreground">
                   Actions
@@ -150,6 +211,64 @@ export function ProductsTable() {
             </tbody>
           </table>
         </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="p-4 border-t border-border">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {pagination.itemsCount} of {pagination.totalCount} products
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (pagination.totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= pagination.totalPages - 2) {
+                    pageNum = pagination.totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg font-medium text-sm transition-all duration-200 ${
+                        currentPage === pageNum
+                          ? "bg-primary text-white"
+                          : "border border-border hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+                disabled={currentPage === pagination.totalPages}
+                className="px-3 py-1 rounded-lg border border-border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:text-primary flex items-center gap-1"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

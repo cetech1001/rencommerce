@@ -3,13 +3,52 @@
 import { prisma } from "@/lib/db";
 import { getAuthSession } from "@/lib/actions/auth";
 import { requireAdmin } from "@/lib/actions/auth";
-import type { OrderDetail, OrderListItem } from "@/lib/types";
+import type { OrderDetail, OrderListItem, PaginatedResponse } from "@/lib/types";
 
-export async function getAllOrders(): Promise<OrderListItem[]> {
-  await requireAdmin();
+export interface OrderQueryOptions {
+  page?: number;
+  limit?: number;
+  orderBy?: "createdAt" | "totalAmount";
+  sortOrder?: "asc" | "desc";
+  userId?: string; // If provided, fetch only this user's orders
+  isAdmin?: boolean; // If true, fetch all orders (admin view)
+}
+
+export async function getOrders(
+  options: OrderQueryOptions = {}
+): Promise<PaginatedResponse<OrderListItem>> {
+  const {
+    page = 1,
+    limit = 10,
+    orderBy = "createdAt",
+    sortOrder = "desc",
+    userId,
+    isAdmin = false,
+  } = options;
+
+  // Check authorization
+  if (isAdmin) {
+    await requireAdmin();
+  } else if (!userId) {
+    const session = await getAuthSession();
+    if (!session.user) {
+      return {
+        data: [],
+        meta: {
+          page,
+          itemsCount: 0,
+          totalPages: 0,
+          totalCount: 0,
+        },
+      };
+    }
+  }
 
   try {
+    const where = userId ? { userID: userId } : {};
+
     const orders = await prisma.order.findMany({
+      where,
       include: {
         user: {
           select: {
@@ -19,9 +58,13 @@ export async function getAllOrders(): Promise<OrderListItem[]> {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        [orderBy]: sortOrder,
       },
+      skip: limit * (page - 1),
+      take: limit,
     });
+
+    const ordersCount = await prisma.order.count({ where });
 
     const formattedOrders: OrderListItem[] = orders.map((order) => ({
       id: order.id,
@@ -33,10 +76,26 @@ export async function getAllOrders(): Promise<OrderListItem[]> {
       createdAt: order.createdAt.toISOString(),
     }));
 
-    return formattedOrders;
+    return {
+      data: formattedOrders,
+      meta: {
+        page,
+        itemsCount: formattedOrders.length,
+        totalPages: Math.ceil(ordersCount / limit),
+        totalCount: ordersCount,
+      },
+    };
   } catch (error) {
     console.error("Error fetching orders:", error);
-    return [];
+    return {
+      data: [],
+      meta: {
+        page,
+        itemsCount: 0,
+        totalPages: 0,
+        totalCount: 0,
+      },
+    };
   }
 }
 
@@ -90,54 +149,3 @@ export async function getOrderByID(orderID: string): Promise<OrderDetail | null>
   return formattedOrder;
 }
 
-export async function getUserOrders(): Promise<OrderDetail[]> {
-  const session = await getAuthSession();
-
-  if (!session.user) {
-    return [];
-  }
-
-  const orders = await prisma.order.findMany({
-    where: { userID: session.user.id },
-    include: {
-      orderItems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  const formattedOrders: OrderDetail[] = orders.map((order) => ({
-    id: order.id,
-    totalAmount: order.totalAmount,
-    shippingFee: order.shippingFee,
-    status: order.status,
-    type: order.type,
-    createdAt: order.createdAt.toISOString(),
-    orderItems: order.orderItems.map((item) => ({
-      id: item.id,
-      quantity: item.quantity,
-      price: item.price,
-      type: item.type,
-      rentalStartDate: item.rentalStartDate?.toISOString() || null,
-      rentalEndDate: item.rentalEndDate?.toISOString() || null,
-      product: {
-        id: item.product.id,
-        name: item.product.name,
-        image: item.product.image,
-      },
-    })),
-  }));
-
-  return formattedOrders;
-}
