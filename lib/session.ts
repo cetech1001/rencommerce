@@ -75,7 +75,6 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const payload = await verifySession(token);
 
   if (!payload) {
-    await deleteSessionCookie();
     return null;
   }
 
