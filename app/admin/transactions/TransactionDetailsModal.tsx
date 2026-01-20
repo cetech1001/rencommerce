@@ -11,9 +11,10 @@ import Link from "next/link";
 interface TransactionDetailsModalProps {
   transactionID: string;
   onClose: () => void;
+  onStatusUpdated?: () => void;
 }
 
-export function TransactionDetailsModal({ transactionID, onClose }: TransactionDetailsModalProps) {
+export function TransactionDetailsModal({ transactionID, onClose, onStatusUpdated }: TransactionDetailsModalProps) {
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -48,6 +49,7 @@ export function TransactionDetailsModal({ transactionID, onClose }: TransactionD
 
       if (result.success) {
         await fetchTransaction();
+        onStatusUpdated?.();
         setToast({ message: "Transaction status updated successfully", type: "success" });
       } else {
         setToast({ message: result.error || "Failed to update transaction status", type: "error" });

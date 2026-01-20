@@ -17,7 +17,11 @@ export function TransactionsTable() {
     fetchTransactions();
   }, []);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+
     try {
       const { getAllTransactions } = await import("@/lib/queries/transaction");
       const data = await getAllTransactions();
@@ -162,6 +166,7 @@ export function TransactionsTable() {
         <TransactionDetailsModal
           transactionID={selectedTransactionID}
           onClose={() => setSelectedTransactionID(null)}
+          onStatusUpdated={() => fetchTransactions(false)}
         />
       )}
     </div>
