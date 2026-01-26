@@ -1,8 +1,6 @@
 "use server";
 
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { getStorageService } from "@/lib/services/storage";
 
 export async function uploadImage(formData: FormData) {
   try {
@@ -22,30 +20,27 @@ export async function uploadImage(formData: FormData) {
       return { success: false, error: "File size must be less than 5MB" };
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
+    // Get storage service based on environment configuration
+    const storageService = getStorageService();
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const extension = file.name.split(".").pop();
-    const filename = `${timestamp}-${randomString}.${extension}`;
+    // Upload using the configured storage service
+    const result = await storageService.uploadImage(file, file.name);
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filepath = join(uploadsDir, filename);
-    await writeFile(filepath, buffer);
-
-    // Return public URL
-    const url = `/uploads/${filename}`;
-
-    return { success: true, url };
+    return result;
   } catch (error) {
     console.error("Upload error:", error);
     return { success: false, error: "Failed to upload file" };
+  }
+}
+
+export async function deleteImage(url: string) {
+  try {
+    const storageService = getStorageService();
+    const success = await storageService.deleteImage(url);
+
+    return { success };
+  } catch (error) {
+    console.error("Delete error:", error);
+    return { success: false, error: "Failed to delete file" };
   }
 }
