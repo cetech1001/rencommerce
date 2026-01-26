@@ -55,9 +55,7 @@ export class RailwayBucketStorage implements StorageService {
 
       await this.s3Client.send(command);
 
-      // Construct the public URL
-      // Railway/S3 format: https://endpoint/bucket/filename
-      const url = `${this.endpoint}/${this.bucketName}/${filename}`;
+      const url = `https://bucket-proxy.up.railway.app/unsafe/plain/s3://${this.bucketName}/${filename}`;
 
       return { success: true, url };
     } catch (error) {
