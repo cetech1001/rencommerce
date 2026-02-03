@@ -111,6 +111,8 @@ model Order {
   shippingAddressID String
   totalAmount       Float
   shippingFee       Float       @default(0)
+  discountFee       Float       @default(0)
+  taxFee            Float       @default(0)
   status            OrderStatus @default(PENDING)
   type              OrderType
   createdAt         DateTime    @default(now())

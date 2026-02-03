@@ -97,6 +97,9 @@ export default function AdminOrderDetailsPage() {
     );
   }
 
+  const orderSubtotal =
+    order.totalAmount - order.shippingFee - order.taxFee + order.discountFee;
+
   return (
     <div className="min-h-screen bg-muted/30 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -210,17 +213,25 @@ export default function AdminOrderDetailsPage() {
           {/* Order Summary */}
           <div className="bg-white rounded-lg border border-border p-6">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Package className="w-4 h-4" />
                   <span>Items ({order.orderItems.length})</span>
                 </div>
-                <span className="font-medium">
-                  ${(order.totalAmount - order.shippingFee).toFixed(2)}
-                </span>
+                <span className="font-medium">${orderSubtotal.toFixed(2)}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              {order.discountFee > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span className="font-medium text-green-600">-${order.discountFee.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Tax</span>
+                <span className="font-medium">${order.taxFee.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <DollarSign className="w-4 h-4" />
                   <span>Shipping</span>
@@ -229,11 +240,9 @@ export default function AdminOrderDetailsPage() {
                   {order.shippingFee > 0 ? `$${order.shippingFee.toFixed(2)}` : "Free"}
                 </span>
               </div>
-              <div className="pt-3 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground">Total</span>
-                  <span className="text-xl font-bold text-primary">${order.totalAmount.toFixed(2)}</span>
-                </div>
+              <div className="pt-3 border-t border-border flex items-center justify-between">
+                <span className="font-semibold text-foreground">Total</span>
+                <span className="text-xl font-bold text-primary">${order.totalAmount.toFixed(2)}</span>
               </div>
             </div>
           </div>

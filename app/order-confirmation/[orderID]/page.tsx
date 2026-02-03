@@ -34,6 +34,10 @@ export default function OrderConfirmationPage() {
     }
   };
 
+  const subtotal = order
+    ? order.totalAmount - order.shippingFee - order.taxFee + order.discountFee
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 flex items-center justify-center">
@@ -77,6 +81,26 @@ export default function OrderConfirmationPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
                   <span className="font-medium text-green-600">{order.status}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span className="font-medium text-foreground">${subtotal.toFixed(2)}</span>
+                </div>
+                {order.discountFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Discount:</span>
+                    <span className="font-medium text-green-600">-${order.discountFee.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tax:</span>
+                  <span className="font-medium text-foreground">${order.taxFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Shipping:</span>
+                  <span className="font-medium text-foreground">
+                    {order.shippingFee > 0 ? `$${order.shippingFee.toFixed(2)}` : "Free"}
+                  </span>
                 </div>
               </div>
 

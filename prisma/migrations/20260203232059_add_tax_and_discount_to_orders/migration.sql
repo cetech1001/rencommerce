@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `orders` ADD COLUMN `discountFee` DOUBLE NOT NULL DEFAULT 0,
+    ADD COLUMN `taxFee` DOUBLE NOT NULL DEFAULT 0;

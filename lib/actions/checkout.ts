@@ -160,6 +160,8 @@ export async function createOrder(data: CheckoutData) {
         shippingAddressID,
         totalAmount: data.totalAmount,
         shippingFee: data.shippingFee,
+        discountFee: data.discountFee,
+        taxFee: data.taxFee,
         status: "PENDING",
         type: orderType,
         orderItems: {

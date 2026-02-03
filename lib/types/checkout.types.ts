@@ -27,6 +27,8 @@ export interface CheckoutData {
   sameAsBilling: boolean;
   totalAmount: number;
   shippingFee: number;
+  discountFee: number;
+  taxFee: number;
   couponCode?: string;
   accountData?: RegisterData;
 }

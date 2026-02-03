@@ -237,6 +237,8 @@ export default function CheckoutPage() {
       sameAsBilling,
       totalAmount: grandTotal,
       shippingFee,
+      discountFee: discount,
+      taxFee: tax,
       couponCode: appliedCoupon?.code,
       accountData: !isAuthenticated
         ? {

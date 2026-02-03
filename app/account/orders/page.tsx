@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Loader2, Package, Calendar, DollarSign, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Package, Calendar, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { getAuthSession } from "@/lib/actions/auth";
 import { getOrders, getOrderByID } from "@/lib/queries/orders";
 import type { OrderListItem, OrderDetail, PaginationMeta } from "@/lib/types";
@@ -132,9 +132,15 @@ export default function CustomerOrdersPage() {
                 const orderDetails = ordersDetails.get(order.id);
                 if (!orderDetails) return null;
 
+                const orderSubtotal =
+                  orderDetails.totalAmount -
+                  orderDetails.shippingFee -
+                  orderDetails.taxFee +
+                  orderDetails.discountFee;
+
                 return (
-              <div
-                key={order.id}
+                  <div
+                    key={order.id}
                 className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow"
               >
                 {/* Order Header */}
@@ -236,26 +242,46 @@ export default function CustomerOrdersPage() {
                   </div>
 
                   {/* Order Summary */}
-                  <div className="mt-6 pt-6 border-t border-border">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className="mt-6 pt-6 border-t border-border space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Package className="w-4 h-4" />
-                        <span>{orderDetails.orderItems.length} item(s)</span>
+                        <span>Items ({orderDetails.orderItems.length})</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Shipping:</span>
-                        <span className="font-medium">
-                          {orderDetails.shippingFee > 0 ? `$${orderDetails.shippingFee.toFixed(2)}` : "Free"}
+                      <span className="font-medium">${orderSubtotal.toFixed(2)}</span>
+                    </div>
+                    {orderDetails.discountFee > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Discount</span>
+                        <span className="font-medium text-green-600">
+                          -${orderDetails.discountFee.toFixed(2)}
                         </span>
                       </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span className="font-medium">${orderDetails.taxFee.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span className="font-medium">
+                        {orderDetails.shippingFee > 0
+                          ? `$${orderDetails.shippingFee.toFixed(2)}`
+                          : "Free"}
+                      </span>
+                    </div>
+                    <div className="pt-3 border-t border-border flex items-center justify-between">
+                      <span className="font-semibold text-foreground">Total</span>
+                      <span className="font-bold text-primary">
+                        ${orderDetails.totalAmount.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
             );
-              })}
-            </div>
+          })}
+        </div>
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (

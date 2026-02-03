@@ -38,6 +38,8 @@ export interface OrderDetail {
   id: string;
   totalAmount: number;
   shippingFee: number;
+  discountFee: number;
+  taxFee: number;
   status: OrderStatus;
   type: OrderType;
   createdAt: string;

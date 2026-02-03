@@ -272,8 +272,10 @@ export default function PaymentPage() {
 
   if (!order) return null;
 
-  const subtotal = order.totalAmount - (order.totalAmount * 0.1) - order.shippingFee;
-  const tax = order.totalAmount * 0.1;
+  const discountAmount = order.discountFee;
+  const taxAmount = order.taxFee;
+  const shippingAmount = order.shippingFee;
+  const subtotal = order.totalAmount - taxAmount - shippingAmount + discountAmount;
 
   // Calculate crypto amount using real-time rates
   const cryptoAmount = cryptoRates
@@ -681,6 +683,22 @@ export default function PaymentPage() {
                     <span className="text-muted-foreground">Order status:</span>
                     <span className="font-medium text-foreground">{formattedOrderStatus}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Discount:</span>
+                      <span className="font-medium text-green-600">-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax:</span>
+                    <span className="font-medium text-foreground">${taxAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shipping:</span>
+                    <span className="font-medium text-foreground">
+                      {shippingAmount > 0 ? `$${shippingAmount.toFixed(2)}` : "Free"}
+                    </span>
+                  </div>
                   {blockingTransaction && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Latest transaction:</span>
@@ -724,14 +742,20 @@ export default function PaymentPage() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium text-foreground">${subtotal.toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Discount</span>
+                    <span className="font-medium text-green-600">-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (10%)</span>
-                  <span className="font-medium text-foreground">${tax.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className="font-medium text-foreground">${taxAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  {order.shippingFee > 0 ? (
-                    <span className="font-medium text-foreground">${order.shippingFee.toFixed(2)}</span>
+                  {shippingAmount > 0 ? (
+                    <span className="font-medium text-foreground">${shippingAmount.toFixed(2)}</span>
                   ) : (
                     <span className="font-medium text-green-600">Free</span>
                   )}

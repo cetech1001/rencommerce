@@ -137,6 +137,8 @@ export async function getOrderByID(orderID: string): Promise<OrderDetail | null>
     id: order.id,
     totalAmount: order.totalAmount,
     shippingFee: order.shippingFee,
+    discountFee: order.discountFee,
+    taxFee: order.taxFee,
     status: order.status,
     type: order.type,
     createdAt: order.createdAt.toISOString(),
