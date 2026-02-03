@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle, Package, ArrowRight } from "lucide-react";
 import { getOrderByID } from "@/lib/queries/orders";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus } from "@/lib/prisma/enums";
 
 interface OrderConfirmationPageProps {
   params: {
