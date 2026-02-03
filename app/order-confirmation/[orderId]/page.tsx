@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { CheckCircle, Package, Loader2, ArrowRight } from "lucide-react";
 import { getOrderByID } from "@/lib/queries/orders";
 import type { OrderDetail } from "@/lib/types";
+import { OrderStatus } from "@prisma/client";
 
 export default function OrderConfirmationPage() {
   const params = useParams();
@@ -110,10 +111,10 @@ export default function OrderConfirmationPage() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
               <Link
-                href="/"
+                href={order?.status === OrderStatus.PENDING ? `/payment/${order.id}` : "/"}
                 className="inline-flex items-center justify-center px-6 py-3 rounded-lg border-2 border-primary text-primary font-semibold hover:bg-primary/10 transition-all duration-200"
               >
-                Back to Home
+                {order?.status === OrderStatus.PENDING ? "Go to Payment" : "Back to Home"}
               </Link>
             </div>
           </div>

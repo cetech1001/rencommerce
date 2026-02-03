@@ -117,6 +117,15 @@ export async function getOrderByID(orderID: string): Promise<OrderDetail | null>
       },
       billingAddress: true,
       shippingAddress: true,
+      transactions: {
+        select: {
+          id: true,
+          status: true,
+          paymentMethod: true,
+          amount: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -144,8 +153,14 @@ export async function getOrderByID(orderID: string): Promise<OrderDetail | null>
         image: item.product.image,
       },
     })),
+    transactions: order.transactions.map((transaction) => ({
+      id: transaction.id,
+      status: transaction.status,
+      paymentMethod: transaction.paymentMethod,
+      amount: transaction.amount,
+      createdAt: transaction.createdAt.toISOString(),
+    })),
   };
 
   return formattedOrder;
 }
-

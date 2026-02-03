@@ -4,7 +4,20 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Lock, Copy, Check, Zap, DollarSign, Bitcoin, Loader2, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Lock,
+  Copy,
+  Check,
+  Zap,
+  DollarSign,
+  Bitcoin,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  AlertTriangle,
+  Package,
+} from "lucide-react";
 import { useCart } from "@/lib/contexts";
 import {
   getOrderByID,
@@ -270,6 +283,19 @@ export default function PaymentPage() {
       )
     : 0;
 
+  const completedTransaction = order.transactions.find(
+    (transaction) => transaction.status === TransactionStatus.COMPLETED
+  );
+  const pendingTransaction = order.transactions.find(
+    (transaction) => transaction.status === TransactionStatus.PENDING
+  );
+  const blockingTransaction = completedTransaction ?? pendingTransaction;
+  const showPaymentOptions =
+    order.status === OrderStatus.PENDING && !blockingTransaction;
+  const normalizedOrderStatus = order.status.toLowerCase().replace(/_/g, " ");
+  const formattedOrderStatus =
+    normalizedOrderStatus.charAt(0).toUpperCase() + normalizedOrderStatus.slice(1);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-8 sm:py-12">
       <div className="container mx-auto px-4 max-w-5xl">
@@ -291,7 +317,8 @@ export default function PaymentPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Payment Form */}
-          <form onSubmit={handleSubmitPayment} className="lg:col-span-2">
+          {showPaymentOptions ? (
+            <form onSubmit={handleSubmitPayment} className="lg:col-span-2">
             {/* Payment Method Tabs */}
             <div className="bg-white rounded-xl border border-border p-6 mb-6">
               <h2 className="text-lg font-semibold text-foreground mb-6">Payment Method</h2>
@@ -598,6 +625,74 @@ export default function PaymentPage() {
               )}
             </button>
           </form>
+          ) : (
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              <div className="bg-white rounded-2xl border border-border p-8 text-center space-y-4">
+                <div
+                  className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center ${
+                    completedTransaction
+                      ? "bg-green-100"
+                      : order.status !== OrderStatus.PENDING
+                      ? "bg-amber-100"
+                      : "bg-primary/10"
+                  }`}
+                >
+                  {completedTransaction ? (
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  ) : order.status !== OrderStatus.PENDING ? (
+                    <AlertTriangle className="w-10 h-10 text-amber-700" />
+                  ) : (
+                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                  )}
+                </div>
+                <h2 className="text-2xl font-bold text-foreground">
+                  {completedTransaction
+                    ? "Payment complete"
+                    : order.status !== OrderStatus.PENDING
+                    ? "Order locked"
+                    : "Processing payment"}
+                </h2>
+                <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                  {completedTransaction
+                    ? `We have already received payment for this order. Latest transaction status: ${completedTransaction.status}.`
+                    : order.status !== OrderStatus.PENDING
+                    ? `Current order status is ${formattedOrderStatus}. Payment options are disabled for this order.`
+                    : blockingTransaction
+                    ? `A transaction is already in progress (${blockingTransaction.status}), so new payment attempts are blocked until it completes.`
+                    : "Your order is still pending, but payment cannot be accepted right now."}
+                </p>
+              </div>
+
+              <div className="bg-muted/50 rounded-xl p-6 text-left space-y-4">
+                <div className="flex items-center gap-3">
+                  <Package className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Order overview</h3>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Order number:</span>
+                    <span className="font-mono font-medium">{order.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total amount:</span>
+                    <span className="font-semibold text-primary">${order.totalAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Order status:</span>
+                    <span className="font-medium text-foreground">{formattedOrderStatus}</span>
+                  </div>
+                  {blockingTransaction && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Latest transaction:</span>
+                      <span className="font-medium text-foreground">
+                        {blockingTransaction.paymentMethod} · {blockingTransaction.status}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Order Summary */}
           <div className="lg:col-span-1">

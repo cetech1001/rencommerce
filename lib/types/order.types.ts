@@ -1,4 +1,9 @@
-import type { OrderStatus as PrismaOrderStatus, OrderType as PrismaOrderType } from "../prisma/enums";
+import type {
+  OrderStatus as PrismaOrderStatus,
+  OrderType as PrismaOrderType,
+  PaymentMethod,
+  TransactionStatus,
+} from "../prisma/enums";
 
 export type OrderStatus = PrismaOrderStatus;
 export type OrderType = PrismaOrderType;
@@ -37,4 +42,13 @@ export interface OrderDetail {
   type: OrderType;
   createdAt: string;
   orderItems: OrderItemDetail[];
+  transactions: OrderTransaction[];
+}
+
+export interface OrderTransaction {
+  id: string;
+  status: TransactionStatus;
+  paymentMethod: PaymentMethod;
+  amount: number;
+  createdAt: string;
 }
