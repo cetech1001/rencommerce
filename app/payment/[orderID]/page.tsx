@@ -23,7 +23,7 @@ import {
   getOrderByID,
   getCryptoRates,
 } from "@/lib/queries";
-import { processPayment } from "@/lib/actions/payment";
+import { processPayment } from "@/lib/actions";
 import type { OrderDetail, PaymentFormState, CryptoRate } from "@/lib/types";
 import { convertToCrypto } from "@/lib/utils";
 import {
@@ -36,7 +36,7 @@ import {
   validateCVC,
   validateCardholderName,
   type CardType,
-} from "@/lib/utils/cardValidation";
+} from "@/lib/utils";
 import { OrderStatus, PaymentMethod, TransactionStatus } from "@/lib/prisma/enums";
 
 export default function PaymentPage() {
