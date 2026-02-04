@@ -26,8 +26,16 @@ export async function getProducts(options: ProductQueryOptions): Promise<Paginat
 
   if (search) {
     where.OR = [
-      { name: { search } },
-      { shortDescription: { search } },
+      {
+        name: {
+          contains: search,
+        },
+      },
+      {
+        shortDescription: {
+          contains: search,
+        },
+      },
     ];
   }
   if (isActive !== undefined) {

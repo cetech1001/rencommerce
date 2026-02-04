@@ -1,7 +1,7 @@
  "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Grid3x3, List, X } from "lucide-react";
+import { ChevronDown, Grid3x3, List, X, Search } from "lucide-react";
 import { ProductCard } from "@/lib/components/client";
 import { ProductFilters } from "./ProductFilters";
 import { getMode, PRODUCT_CARD_MODE } from "@/lib/utils";
@@ -36,6 +36,8 @@ export default function Products() {
     totalPages: 0,
     itemsCount: 0,
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const itemsPerPage = 12;
 
@@ -65,6 +67,7 @@ export default function Products() {
         categories: selectedCategories,
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
+        search: searchQuery,
         hasRentalPrice: productType
           ? productType === PRODUCT_CARD_MODE.RENTAL
           : undefined,
@@ -105,15 +108,29 @@ export default function Products() {
 
   useEffect(() => {
     fetchProducts();
-  }, [priceRange, currentPage, selectedCategories, productType, sortBy, sortOrder]);
+  }, [priceRange, currentPage, selectedCategories, productType, sortBy, sortOrder, searchQuery]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [productType, selectedCategories, sortBy, sortOrder]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchTerm.trim());
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
   const handleClearFilters = () => {
     setProductType(undefined);
     setSelectedCategories([]);
+    setSearchTerm("");
+    setSearchQuery("");
   };
 
   const activeFiltersCount = selectedCategories.length;
@@ -163,7 +180,7 @@ export default function Products() {
           {/* Products Grid */}
           <div className="lg:col-span-3 order-1 lg:order-2">
             {/* Top Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="text-sm text-muted-foreground">
                   {pagination.totalCount} product{pagination.totalCount !== 1 ? 's' : ''}
@@ -179,52 +196,73 @@ export default function Products() {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                {/* Sort Dropdown */}
-                <div className="relative">
-                  <select
-                    value={selectedSort}
-                    onChange={(e) => {
-                      const option = sortOptions.find(s => s.label === e.target.value)!;
-                      setSelectedSort(e.target.value);
-                      setSortBy(option.value);
-                      setSortOrder(option.order);
-                    }}
-                    className="appearance-none w-full sm:w-auto px-4 py-2 pr-10 bg-white border border-border rounded-lg text-sm font-medium text-foreground cursor-pointer hover:border-primary transition-colors"
-                  >
-                    {sortOptions.map((option) => (
-                      <option key={option.label} value={option.label}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1">
+                  <label htmlFor="product-search" className="sr-only">
+                    Search products
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                      <Search className="w-4 h-4" />
+                    </div>
+                    <input
+                      id="product-search"
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search name, description"
+                      className="w-full rounded-lg border border-border bg-white px-3 py-2 pl-10 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
                 </div>
 
-                {/* View Mode Toggle */}
-                <div className="hidden sm:flex gap-2 bg-white border border-border rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded transition-all duration-200 ${
-                      viewMode === "grid"
-                        ? "bg-primary text-white"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="Grid view"
-                  >
-                    <Grid3x3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 rounded transition-all duration-200 ${
-                      viewMode === "list"
-                        ? "bg-primary text-white"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="List view"
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  {/* Sort Dropdown */}
+                  <div className="relative w-full sm:w-auto">
+                    <select
+                      value={selectedSort}
+                      onChange={(e) => {
+                        const option = sortOptions.find(s => s.label === e.target.value)!;
+                        setSelectedSort(e.target.value);
+                        setSortBy(option.value);
+                        setSortOrder(option.order);
+                      }}
+                      className="appearance-none w-full px-4 py-2 pr-10 bg-white border border-border rounded-lg text-sm font-medium text-foreground cursor-pointer hover:border-primary transition-colors"
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.label} value={option.label}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  </div>
+
+                  {/* View Mode Toggle */}
+                  <div className="hidden sm:flex gap-2 bg-white border border-border rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-2 rounded transition-all duration-200 ${
+                        viewMode === "grid"
+                          ? "bg-primary text-white"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title="Grid view"
+                    >
+                      <Grid3x3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`p-2 rounded transition-all duration-200 ${
+                        viewMode === "list"
+                          ? "bg-primary text-white"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title="List view"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
