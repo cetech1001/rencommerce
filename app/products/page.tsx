@@ -43,7 +43,7 @@ export default function Products() {
 
   const fetchCategories = async () => {
     try {
-      const categories = await getCategories(productType);
+      const categories = await getCategories(productType, searchQuery);
       setCategories(categories);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -52,7 +52,7 @@ export default function Products() {
 
   const fetchPriceRange = async () => {
     try {
-      const priceRange = await getPriceRange(productType, selectedCategories);
+      const priceRange = await getPriceRange(productType, selectedCategories, searchQuery);
       setPriceRange([priceRange.min, priceRange.max]);
     } catch (error) {
       console.error("Failed to fetch price range:", error);
@@ -87,24 +87,9 @@ export default function Products() {
   };
 
   useEffect(() => {
-    Promise.all([
-      fetchCategories(),
-      fetchPriceRange(),
-    ]);
-  }, []);
-
-  useEffect(() => {
-    Promise.all([
-      fetchCategories(),
-      fetchPriceRange(),
-    ]);
-  }, [productType]);
-
-  useEffect(() => {
-    Promise.all([
-      fetchPriceRange(),
-    ]);
-  }, [selectedCategories]);
+    fetchCategories();
+    fetchPriceRange();
+  }, [productType, selectedCategories, searchQuery]);
 
   useEffect(() => {
     fetchProducts();
@@ -210,7 +195,7 @@ export default function Products() {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search name, description"
+                      placeholder="Search name, description, categories"
                       className="w-full rounded-lg border border-border bg-white px-3 py-2 pl-10 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>

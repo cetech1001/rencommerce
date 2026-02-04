@@ -150,8 +150,6 @@ export default function CheckoutPage() {
     setCouponLoading(false);
   };
 
-  // This function is no longer needed - account creation is now handled in createOrder action
-
   const validateForm = () => {
     const newErrors: string[] = [];
 

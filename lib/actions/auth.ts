@@ -36,6 +36,7 @@ export async function register(data: RegisterData) {
     // Create session
     const token = await createSession({
       userID: user.id,
+      phone: user.phone || undefined,
       role: user.role,
       name: user.name,
       email: user.email,
@@ -102,6 +103,7 @@ export async function login(_: unknown, data: FormData) {
     const token = await createSession({
       userID: user.id,
       role: user.role,
+      phone: user.phone || undefined,
       name: user.name,
       email: user.email,
     });

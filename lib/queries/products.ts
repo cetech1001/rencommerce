@@ -6,6 +6,16 @@ import { ProductOrderByWithAggregationInput, ProductWhereInput } from "../prisma
 import { PRODUCT_CARD_MODE } from "../utils";
 import { PaginatedResponse } from "../types/pagination.types";
 
+function applySearchFilter(where: ProductWhereInput, search?: string) {
+  if (!search) return;
+
+  where.OR = [
+    { name: { contains: search } },
+    { shortDescription: { contains: search } },
+    { category: { contains: search } },
+  ];
+}
+
 export async function getProducts(options: ProductQueryOptions): Promise<PaginatedResponse<IProduct>> {
   const {
     page = 1,
@@ -24,20 +34,7 @@ export async function getProducts(options: ProductQueryOptions): Promise<Paginat
 
   const where: ProductWhereInput = {};
 
-  if (search) {
-    where.OR = [
-      {
-        name: {
-          contains: search,
-        },
-      },
-      {
-        shortDescription: {
-          contains: search,
-        },
-      },
-    ];
-  }
+  applySearchFilter(where, search);
   if (isActive !== undefined) {
     where.isActive = isActive;
   }
@@ -160,7 +157,7 @@ export async function getProductByID(productID: string): Promise<Product | null>
   return null;
 }
 
-export async function getCategories(type?: PRODUCT_CARD_MODE): Promise<ProductCategory[]> {
+export async function getCategories(type?: PRODUCT_CARD_MODE, search?: string): Promise<ProductCategory[]> {
   const where: ProductWhereInput = { isActive: true };
 
   if (type === PRODUCT_CARD_MODE.RENTAL) {
@@ -170,6 +167,8 @@ export async function getCategories(type?: PRODUCT_CARD_MODE): Promise<ProductCa
     where.purchasePrice = { gt: 0 };
     where.rentalPrice = { equals: 0 };
   }
+
+  applySearchFilter(where, search);
 
   const categories = await prisma.product.groupBy({
     by: ["category"],
@@ -190,7 +189,8 @@ export async function getCategories(type?: PRODUCT_CARD_MODE): Promise<ProductCa
 
 export async function getPriceRange(
   type?: PRODUCT_CARD_MODE,
-  categories?: string[]
+  categories?: string[],
+  search?: string
 ): Promise<PriceRange> {
   const where: ProductWhereInput = { isActive: true };
 
@@ -205,6 +205,8 @@ export async function getPriceRange(
     where.purchasePrice = { gt: 0 };
     where.rentalPrice = { equals: 0 };
   }
+
+  applySearchFilter(where, search);
 
   const priceAggregates = await prisma.product.aggregate({
     where,
